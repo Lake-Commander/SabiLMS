@@ -32,9 +32,13 @@ export default function Sidebar({ isOpen, setIsOpen, user, onLogout }: SidebarPr
     { href: '/dashboard/playground', label: 'Playground', icon: Code },
   ];
 
+  const isLinkActive = (href: string, exact = false) => {
+    if (exact) return pathname === href;
+    return pathname.startsWith(href);
+  };
+
   return (
     <>
-      {/* Retractable Desktop Drawer Frame */}
       <aside className={`
         fixed md:sticky top-0 left-0 z-40
         h-screen bg-[var(--white)] border-r-2 border-black p-4
@@ -42,116 +46,124 @@ export default function Sidebar({ isOpen, setIsOpen, user, onLogout }: SidebarPr
         ${isOpen ? 'w-64' : 'w-20 max-md:-translate-x-full'}
       `}>
         
-        {/* Top Control Block */}
+        {/* TOP BLOCK: Brand + Retract Mechanism */}
         <div className="space-y-6">
-          {/* Header Brand without site header */}
-          <div className="flex items-center justify-between min-h-[40px]">
-            {isOpen && (
-              <span className="font-display font-black text-sm uppercase tracking-tight text-[var(--black)]">
+          <div className="flex items-center justify-between min-h-[40px] relative">
+            {isOpen ? (
+              <span className="font-display font-black text-sm uppercase tracking-tight text-[var(--black)] animate-fadeIn">
                 Sabi<span className="italic font-normal lowercase text-xs">stok</span>
               </span>
+            ) : (
+              <div className="w-full flex justify-center">
+                <span className="font-display font-black text-sm uppercase text-[var(--black)]">S</span>
+              </div>
             )}
+            
+            {/* Collapse Trigger Button - Asymmetric Placement */}
             <button 
               onClick={() => setIsOpen(!isOpen)}
-              className="hidden md:flex p-1.5 border-2 border-black bg-[var(--cream)] rounded-md hover:bg-[var(--orange)] transition-colors mx-auto"
-              aria-label="Collapse panel layout view"
+              className="hidden md:flex p-1.5 border-2 border-black bg-[var(--cream)] rounded-md hover:bg-[var(--orange)] shadow-[2px_2px_0px_#111111] active:translate-x-[1px] active:translate-y-[1px] transition-all absolute -right-7 top-1 bg-white z-50"
+              aria-label="Toggle Navigation Sidebar"
             >
-              {isOpen ? <ChevronLeft className="w-4 h-4 text-black" /> : <ChevronRight className="w-4 h-4 text-black" />}
+              {isOpen ? <ChevronLeft className="w-3.5 h-3.5 text-black" /> : <ChevronRight className="w-3.5 h-3.5 text-black" />}
             </button>
           </div>
 
-          {/* Clean User Card Block */}
-          <div className="p-2 border-2 border-black rounded-lg bg-[var(--cream)] shadow-[2px_2px_0px_rgba(var(--border-color),1)] flex items-center gap-3">
-            <div className="w-8 h-8 flex-shrink-0 rounded-md bg-[var(--orange)] border border-black font-mono font-black text-xs flex items-center justify-center text-black">
-              {firstName[0]?.toUpperCase()}
-            </div>
-            {isOpen && (
-              <div className="min-w-0">
-                <div className="text-xs font-black uppercase truncate text-black">{firstName}</div>
-                <div className="text-[9px] font-bold text-gray-500 uppercase tracking-widest font-mono">SaaS Profile</div>
-              </div>
-            )}
-          </div>
-
-          {/* Sidebar Links Map Engine */}
-          <nav className="space-y-1">
+          {/* MIDDLE BLOCK: Asymmetric Navigation Links with stylized hover tags */}
+          <nav className="space-y-2 pt-4">
             {sidebarLinks.map((link) => {
               const Icon = link.icon;
-              const active = link.exact ? pathname === link.href : pathname.startsWith(link.href);
+              const active = isLinkActive(link.href, link.exact);
               return (
                 <Link 
                   key={link.href}
                   href={link.href}
                   className={`
-                    flex items-center gap-3 px-3 py-2.5 border-2 rounded-lg text-xs font-black uppercase tracking-wide transition-all
+                    group relative flex items-center gap-3 px-3 py-2.5 border-2 rounded-lg text-xs font-black uppercase tracking-wide transition-all
                     ${active 
-                      ? 'bg-[var(--orange)] border-black shadow-[2px_2px_0px_#111111] text-black' 
-                      : 'text-gray-700 dark:text-gray-300 border-transparent hover:bg-[var(--cream)] hover:border-black/20'
+                      ? 'bg-[var(--orange)] border-black shadow-[3px_3px_0px_#111111] text-black translate-x-[-1px] -translate-y-[1px]' 
+                      : 'text-gray-700 dark:text-gray-300 border-transparent hover:bg-[var(--cream)] hover:border-black/40 hover:text-black dark:hover:text-white'
                     }
                   `}
                 >
                   <Icon className="w-4 h-4 flex-shrink-0 text-current" />
-                  {isOpen && <span className="truncate">{link.label}</span>}
+                  {isOpen ? (
+                    <span className="truncate">{link.label}</span>
+                  ) : (
+                    /* Stylized Brutalist Hover Tooltip for Closed State */
+                    <div className="absolute left-16 hidden group-hover:block bg-[var(--cream-light)] border-2 border-black text-black font-mono font-black text-[10px] uppercase tracking-wider px-2 py-1 whitespace-nowrap z-50 shadow-[2px_2px_0px_#111111]">
+                      {link.label}
+                    </div>
+                  )}
                 </Link>
               );
             })}
           </nav>
         </div>
 
-        {/* Bottom Utility Grid Panel (Settings, Theme, Logout) */}
+        {/* BOTTOM BLOCK: Gemini-Style Profile and System Parameters Area */}
         <div className="space-y-4 border-t-2 border-dashed border-black/10 pt-4">
           
-          {/* Integrated Multi-Theme Selector Toggle Card */}
-          {isOpen ? (
+          {/* Flat 3-Way Mode Toggle */}
+          {isOpen && (
             <div className="grid grid-cols-3 gap-1 p-1 bg-[var(--cream)] border-2 border-black rounded-lg">
-              <button 
-                onClick={() => setTheme('light')} 
-                className={`p-1.5 rounded flex justify-center ${theme === 'light' ? 'bg-[var(--orange)] border border-black text-black' : 'text-gray-500'}`}
-                title="Light Mode"
-              >
-                <Sun className="w-3.5 h-3.5" />
-              </button>
-              <button 
-                onClick={() => setTheme('dark')} 
-                className={`p-1.5 rounded flex justify-center ${theme === 'dark' ? 'bg-[var(--orange)] border border-black text-black' : 'text-gray-500'}`}
-                title="Dark Mode"
-              >
-                <Moon className="w-3.5 h-3.5" />
-              </button>
-              <button 
-                onClick={() => setTheme('system')} 
-                className={`p-1.5 rounded flex justify-center ${theme === 'system' ? 'bg-[var(--orange)] border border-black text-black' : 'text-gray-500'}`}
-                title="System Mode"
-              >
-                <Laptop className="w-3.5 h-3.5" />
-              </button>
+              {(['light', 'dark', 'system'] as const).map((mode) => {
+                const Icon = mode === 'light' ? Sun : mode === 'dark' ? Moon : Laptop;
+                return (
+                  <button 
+                    key={mode}
+                    onClick={() => setTheme(mode)} 
+                    className={`p-1.5 rounded flex justify-center border transition-all ${
+                      theme === mode 
+                        ? 'bg-[var(--orange)] border-black text-black shadow-[1px_1px_0px_#111111]' 
+                        : 'border-transparent text-gray-500 hover:text-black'
+                    }`}
+                  >
+                    <Icon className="w-3.5 h-3.5" />
+                  </button>
+                );
+              })}
             </div>
-          ) : (
-            <button 
-              onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-              className="w-full flex justify-center p-2 border-2 border-black rounded-lg bg-[var(--cream)] text-[var(--black)]"
-            >
-              {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-            </button>
           )}
 
-          {/* Functional Settings Link Row */}
-          <Link 
-            href="/dashboard/settings"
-            className="flex items-center gap-3 px-3 py-2.5 border-2 border-transparent text-xs font-black uppercase text-gray-700 dark:text-gray-300 hover:bg-[var(--cream)] hover:border-black/20 rounded-lg transition-all"
-          >
-            <Settings className="w-4 h-4 flex-shrink-0" />
-            {isOpen && <span>Settings</span>}
-          </Link>
+          {/* Gemini-Inspired User Action Hub */}
+          <div className={`flex ${isOpen ? 'items-center justify-between gap-2' : 'flex-col items-center gap-3'} pt-2`}>
+            <div className="flex items-center gap-2 min-w-0">
+              {/* Profile Avatar Pill */}
+              <div className="w-9 h-9 flex-shrink-0 rounded-lg bg-[var(--green)] border-2 border-black font-mono font-black text-sm flex items-center justify-center text-black shadow-[2px_2px_0px_#111111]">
+                {firstName[0]?.toUpperCase()}
+              </div>
+              {isOpen && (
+                <div className="min-w-0">
+                  <div className="text-xs font-black uppercase truncate text-black max-w-[100px]">{firstName}</div>
+                  <div className="text-[9px] font-bold text-gray-400 font-mono tracking-wider">Account</div>
+                </div>
+              )}
+            </div>
 
-          {/* Execution Logout Action Trigger */}
-          <button
-            onClick={onLogout}
-            className="w-full flex items-center gap-3 px-3 py-2.5 border-2 border-transparent text-xs font-black uppercase text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 hover:border-rose-300 rounded-lg transition-all text-left"
-          >
-            <LogOut className="w-4 h-4 flex-shrink-0" />
-            {isOpen && <span>Logout</span>}
-          </button>
+            {/* Side Action Button Grid */}
+            <div className={`flex ${isOpen ? 'items-center gap-1' : 'flex-col gap-1 w-full items-center'}`}>
+              <Link 
+                href="/dashboard/settings"
+                className={`p-2 border-2 rounded-lg transition-all ${
+                  isLinkActive('/dashboard/settings')
+                    ? 'bg-[var(--orange)] border-black shadow-[1.5px_1.5px_0px_#111111]'
+                    : 'border-transparent text-gray-600 dark:text-gray-400 hover:bg-[var(--cream)] hover:border-black/20'
+                }`}
+                title="Settings"
+              >
+                <Settings className="w-4 h-4" />
+              </Link>
+              
+              <button
+                onClick={onLogout}
+                className="p-2 border-2 border-transparent rounded-lg text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/20 hover:border-rose-300 transition-all"
+                title="Logout"
+              >
+                <LogOut className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
         </div>
 
       </aside>
