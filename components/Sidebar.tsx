@@ -24,7 +24,7 @@ export default function Sidebar({ isOpen, setIsOpen, user, onLogout }: SidebarPr
   const sidebarLinks = [
     { href: '/dashboard', label: 'Overview', icon: LayoutDashboard, exact: true },
     { href: '/dashboard/courses', label: 'Modules', icon: Compass },
-    { href: '/dashboard/tutor', label: 'AI Tutor', icon: Sparkles },
+   // { href: '/dashboard/tutor', label: 'AI Tutor', icon: Sparkles },
     { href: '/simulator', label: 'Simulator', icon: LineChart },
     { href: '/brokers', label: 'Brokers', icon: Building2 },
     { href: '/dashboard/groups', label: 'Study Groups', icon: Users },
