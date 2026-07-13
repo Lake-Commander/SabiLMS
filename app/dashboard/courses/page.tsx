@@ -22,8 +22,9 @@ export default async function CoursesPage({
     .select('*')
     .order('created_at', { ascending: true });
 
+  //  FIXED: Changed column reference from 'difficulty' to 'level' to match your schema matrix
   if (activeDifficulty !== 'all') {
-    query = query.eq('difficulty', activeDifficulty);
+    query = query.eq('level', activeDifficulty);
   }
 
   const { data: courses, error } = await query;
@@ -71,7 +72,8 @@ export default async function CoursesPage({
             return (
               <a
                 key={tab.id}
-                href={`/dashboard/courses${tab.id === 'all' ? '' : `?difficulty=${tab.id}`}`}
+                // FIXED: Updated path variable key from ?difficulty= to ?level= so URL matching hits the correct router slot
+                href={`/dashboard/courses${tab.id === 'all' ? '' : `?level=${tab.id}`}`}
                 className={`px-3 py-1.5 border-2 rounded-md text-[10px] font-mono font-black uppercase tracking-wider transition-all ${
                   isSelected
                     ? 'bg-[var(--orange)] border-black text-black shadow-[2px_2px_0px_#111111] translate-x-[-1px] -translate-y-[1px]'
