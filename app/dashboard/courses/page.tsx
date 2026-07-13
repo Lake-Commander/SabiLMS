@@ -5,7 +5,7 @@ import { redirect } from 'next/navigation';
 export default async function CoursesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ difficulty?: string }>;
+  searchParams: Promise<{ level?: string }>;
 }) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -15,7 +15,7 @@ export default async function CoursesPage({
   }
 
   const resolvedParams = await searchParams;
-  const activeDifficulty = resolvedParams.difficulty || 'all';
+  const activeDifficulty = resolvedParams.level || 'all';
 
   let query = supabase
     .from('courses')
