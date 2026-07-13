@@ -1,12 +1,12 @@
-import type { Metadata } from "next";
+'use client';
+
 import { Space_Grotesk, Unbounded } from "next/font/google";
-// Fixed path error by using explicit root alias matching your src setup
-import "./globals.css"; 
+import { usePathname } from "next/navigation"; // 👈 Add this to catch the active route path
+import "@/app/globals.css"; 
 import { ThemeProvider } from "@/components/ThemeProvider";
 import Navbar from "@/components/common/Navbar";
 import FooterSelector from "@/components/common/FooterSelector";
 
-// Initialize Brutalist Font Pairings
 const spaceGrotesk = Space_Grotesk({ 
   subsets: ["latin"], 
   variable: "--font-body" 
@@ -17,24 +17,27 @@ const unbounded = Unbounded({
   variable: "--font-display" 
 });
 
-// ✅ Optimized Server-side Metadata for SEO 
-export const metadata: Metadata = {
-  title: "Sabistok — Nigeria's #1 Stock Market School",
-  description: "Learn the NGX from zero. Earn XP, unlock badges, invest with confidence.",
-};
-
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const pathname = usePathname();
+
+  //  Banish the public header from injecting itself into the SaaS application area
+  // If the path starts with /dashboard, /simulator, or /brokers, this flag turns true
+  const isSaasWorkspace = 
+    pathname.startsWith('/dashboard') || 
+    pathname.startsWith('/simulator') || 
+    pathname.startsWith('/brokers');
+
   return (
     <html 
       lang="en" 
       className={`${spaceGrotesk.variable} ${unbounded.variable}`}
       suppressHydrationWarning
     >
-      <body className="min-h-screen bg-[#F1EAD9] text-[#111111] antialiased flex flex-col pt-16">
+      <body className="min-h-screen bg-[#F1EAD9] text-[#111111] antialiased flex flex-col">
         <ThemeProvider
           attribute="class"
           defaultTheme="system"
@@ -42,15 +45,16 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <div className="flex flex-col min-h-screen w-full overflow-x-hidden">
-            {/* Global Sticky Navigation Header */}
-            <Navbar />
             
-            {/* Main Application Page Routing Grid Engine */}
-            <main className="flex-1 w-full flex flex-col">
+            {/* ONLY render public navbar if we are NOT inside the application shell */}
+            {!isSaasWorkspace && <Navbar />}
+            
+            {/* Main Content Area */}
+            <main className={`flex-1 w-full flex flex-col ${!isSaasWorkspace ? 'pt-16' : ''}`}>
               {children}
             </main>
             
-            {/* ✅ Dynamic Adaptive Neo-Brutalist Footer Layer */}
+            {/* Dynamic Adaptive Footer Layer */}
             <FooterSelector />
           </div>
         </ThemeProvider>
