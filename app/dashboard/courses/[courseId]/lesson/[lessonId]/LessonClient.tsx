@@ -1,234 +1,260 @@
 'use client';
 
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import QuizQuestion from '@/components/QuizQuestion';
 import Link from 'next/link';
-import { ArrowLeft, CheckCircle } from 'lucide-react';
-import LessonComments from '@/components/LessonComments';
+import { ArrowLeft, CheckCircle, Sparkles, AlertCircle, BookOpen } from 'lucide-react';
 
 interface Lesson {
-    id: string;
-    title: string;
-    content: string;
-    course_id: string;
+  id: string;
+  title: string;
+  content: string;
+  course_id: string;
 }
 
 interface QuizData {
-    questions: {
-        question: string;
-        options: string[];
-        correctIndex: number;
-    }[];
+  questions: {
+    question: string;
+    options: string[];
+    correctIndex: number;
+  }[];
 }
 
 interface LessonClientProps {
-    lesson: Lesson;
-    initialCompleted: boolean;
-    courseId: string;
-    lessonId: string;
-    prevLessonId?: string;
-    nextLessonId?: string;
+  lesson: Lesson;
+  initialCompleted: boolean;
+  courseId: string;
+  lessonId: string;
+  prevLessonId?: string;
+  nextLessonId?: string;
 }
 
-export default function LessonClient({ lesson, initialCompleted, courseId, lessonId, prevLessonId, nextLessonId }: LessonClientProps) {
-    const [quiz, setQuiz] = useState<QuizData | null>(null);
-    const [quizLoading, setQuizLoading] = useState(false);
-    const [answers, setAnswers] = useState<Record<number, number>>({});
-    const [showResults, setShowResults] = useState(false);
-    const [score, setScore] = useState<number | null>(null);
-    const [completed, setCompleted] = useState(initialCompleted);
+export default function LessonClient({ 
+  lesson, 
+  initialCompleted, 
+  courseId, 
+  lessonId, 
+  prevLessonId, 
+  nextLessonId 
+}: LessonClientProps) {
+  const [quiz, setQuiz] = useState<QuizData | null>(null);
+  const [quizLoading, setQuizLoading] = useState(false);
+  const [answers, setAnswers] = useState<Record<number, number>>({});
+  const [showResults, setShowResults] = useState(false);
+  const [score, setScore] = useState<number | null>(null);
+  const [completed, setCompleted] = useState(initialCompleted);
 
-    const router = useRouter();
+  const router = useRouter();
 
-    const handleGenerateQuiz = async () => {
-        setQuizLoading(true);
-        try {
-            const res = await fetch('/api/quiz', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ lessonId: lesson.id }),
-            });
-            const data = await res.json();
-            if (data.questions) {
-                setQuiz(data);
-            }
-        } catch (error) {
-            console.error('Failed to generate quiz', error);
-            alert('Failed to generate quiz. Please try again.');
-        } finally {
-            setQuizLoading(false);
-        }
-    };
+  const handleGenerateQuiz = async () => {
+    setQuizLoading(true);
+    try {
+      const res = await fetch('/api/quiz', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ lessonId: lesson.id }),
+      });
+      const data = await res.json();
+      if (data.questions) {
+        setQuiz(data);
+      }
+    } catch (error) {
+      console.error('Failed to generate quiz', error);
+      alert('Failed to generate quiz. Please try again.');
+    } finally {
+      setQuizLoading(false);
+    }
+  };
 
-    const handleAnswer = (questionIndex: number, optionIndex: number) => {
-        setAnswers(prev => ({ ...prev, [questionIndex]: optionIndex }));
-    };
+  const handleAnswer = (questionIndex: number, optionIndex: number) => {
+    setAnswers(prev => ({ ...prev, [questionIndex]: optionIndex }));
+  };
 
-    const handleSubmitQuiz = async () => {
-        if (!quiz) return;
+  const handleSubmitQuiz = async () => {
+    if (!quiz) return;
 
-        let correctCount = 0;
-        quiz.questions.forEach((q, idx) => {
-            if (answers[idx] === q.correctIndex) correctCount++;
-        });
+    let correctCount = 0;
+    quiz.questions.forEach((q, idx) => {
+      if (answers[idx] === q.correctIndex) correctCount++;
+    });
 
-        // Calculate percentage score (0-100)
-        const rawScore = (correctCount / quiz.questions.length) * 100;
-        const finalScore = Math.round(rawScore); // Round for integer storage
-        // Store precise score in state for display if needed, or just integer
-        setScore(finalScore);
-        setShowResults(true);
+    const rawScore = (correctCount / quiz.questions.length) * 100;
+    const finalScore = Math.round(rawScore);
+    setScore(finalScore);
+    setShowResults(true);
 
-        // Save progress with percentage score
-        try {
-            await fetch('/api/progress', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    courseId,
-                    lessonId,
-                    completed: true,
-                    score: finalScore,
-                    answers: answers
-                }),
-            });
-            setCompleted(true);
-            router.refresh(); // Refresh server components to update progress elsewhere
-        } catch (error) {
-            console.error('Failed to save progress', error);
-        }
-    };
+    try {
+      await fetch('/api/progress', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          courseId,
+          lessonId,
+          completed: true,
+          score: finalScore,
+          answers: answers
+        }),
+      });
+      setCompleted(true);
+      router.refresh();
+    } catch (error) {
+      console.error('Failed to save progress', error);
+    }
+  };
 
-    const handleMarkCompleted = async () => {
-        try {
-            await fetch('/api/progress', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    courseId,
-                    lessonId,
-                    completed: true
-                }),
-            });
-            setCompleted(true);
-            router.refresh();
-        } catch (error) {
-            console.error('Failed to save progress', error);
-        }
-    };
+  const handleMarkCompleted = async () => {
+    try {
+      await fetch('/api/progress', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          courseId,
+          lessonId,
+          completed: true
+        }),
+      });
+      setCompleted(true);
+      router.refresh();
+    } catch (error) {
+      console.error('Failed to save progress', error);
+    }
+  };
 
-    return (
-        <div className="bg-white dark:bg-gray-900 min-h-screen pb-20">
-            <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 py-10">
-                <Link href={`/dashboard/courses/${courseId}`} className="inline-flex items-center text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 mb-6">
-                    <ArrowLeft className="mr-2 h-4 w-4" /> Back to Course
-                </Link>
+  return (
+    <div className="w-full max-w-4xl mx-auto space-y-6 text-[var(--black)] pb-20">
+      
+      {/* Back Navigator pill */}
+      <Link 
+        href={`/dashboard/courses/${courseId}`} 
+        className="inline-flex items-center gap-2 border-2 border-black bg-[var(--white)] px-4 py-2 font-mono text-[11px] font-black uppercase tracking-wider rounded-lg shadow-[2px_2px_0px_#111111] hover:translate-x-[0.5px] hover:translate-y-[0.5px] hover:shadow-[1.5px_1.5px_0px_#111111] transition-all text-black"
+      >
+        <ArrowLeft className="h-3.5 w-3.5" /> Back to Syllabus
+      </Link>
 
-                <div className="flex items-center justify-between mb-8">
-                    <h1 className="text-3xl font-bold text-gray-900 dark:text-white">{lesson.title}</h1>
-                    {completed && (
-                        <span className="inline-flex items-center rounded-full bg-green-100 px-3 py-0.5 text-sm font-medium text-green-800">
-                            <CheckCircle className="mr-1.5 h-4 w-4" /> Completed
-                        </span>
-                    )}
-                </div>
-
-                <div className="prose prose-indigo dark:prose-invert max-w-none mb-12">
-                    {/* In a real app, use a markdown renderer here */}
-                    <div dangerouslySetInnerHTML={{ __html: lesson.content }} />
-                </div>
-
-                <div className="border-t border-gray-200 pt-8">
-                    <div className="flex items-center justify-between mb-8">
-                        <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Quiz</h2>
-                        {!quiz && !completed && (
-                            <button
-                                onClick={handleMarkCompleted}
-                                className="text-sm text-indigo-600 dark:text-indigo-400 hover:text-indigo-500 font-medium"
-                            >
-                                Mark as completed without quiz
-                            </button>
-                        )}
-                    </div>
-
-                    {!quiz ? (
-                        <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-8 text-center">
-                            <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">Test your knowledge</h3>
-                            <p className="text-gray-500 dark:text-gray-400 mb-6">Generate an AI-powered quiz based on this lesson's content.</p>
-                            <button
-                                onClick={handleGenerateQuiz}
-                                disabled={quizLoading}
-                                className="inline-flex items-center rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:opacity-50"
-                            >
-                                {quizLoading ? 'Generating Quiz...' : 'Generate Quiz'}
-                            </button>
-                        </div>
-                    ) : (
-                        <div>
-                            {quiz.questions.map((q, idx) => (
-                                <QuizQuestion
-                                    key={idx}
-                                    question={q.question}
-                                    options={q.options}
-                                    correctIndex={q.correctIndex}
-                                    selectedOption={answers[idx] ?? null}
-                                    onAnswer={(optIdx) => handleAnswer(idx, optIdx)}
-                                    showResult={showResults}
-                                />
-                            ))}
-
-                            {!showResults && (
-                                <div className="mt-6">
-                                    <button
-                                        onClick={handleSubmitQuiz}
-                                        disabled={Object.keys(answers).length < quiz.questions.length}
-                                        className="w-full rounded-md bg-indigo-600 px-3.5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:opacity-50"
-                                    >
-                                        Submit Quiz
-                                    </button>
-                                </div>
-                            )}
-
-                            {showResults && (
-                                <div className={`mt-6 p-4 rounded-md ${score! >= 60 ? 'bg-green-50 text-green-800 dark:bg-green-900/30 dark:text-green-300' : 'bg-yellow-50 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300'}`}>
-                                    <p className="font-bold text-lg text-center">
-                                        You scored {score}%
-                                    </p>
-                                    <p className="text-center mt-2">
-                                        {score! >= 60 ? 'Great job! You passed.' : 'Keep practicing! Try to get at least 60%.'}
-                                    </p>
-                                </div>
-                            )}
-                        </div>
-                    )}
-                </div>
-
-                {/* Navigation Buttons */}
-                <div className="flex items-center justify-between mt-12 pt-8 border-t border-gray-200">
-                    {prevLessonId ? (
-                        <Link
-                            href={`/dashboard/courses/${courseId}/lesson/${prevLessonId}`}
-                            className="inline-flex items-center rounded-md bg-white dark:bg-gray-800 px-3.5 py-2.5 text-sm font-semibold text-gray-900 dark:text-white shadow-sm ring-1 ring-inset ring-gray-300 dark:ring-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700"
-                        >
-                            <ArrowLeft className="mr-2 h-4 w-4" /> Previous Lesson
-                        </Link>
-                    ) : (
-                        <div></div> // Spacer
-                    )}
-
-                    {nextLessonId && (
-                        <Link
-                            href={`/dashboard/courses/${courseId}/lesson/${nextLessonId}`}
-                            className="inline-flex items-center rounded-md bg-indigo-600 px-3.5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
-                        >
-                            Next Lesson <ArrowLeft className="ml-2 h-4 w-4 rotate-180" />
-                        </Link>
-                    )}
-                </div>
-
-                <LessonComments lessonId={lesson.id} />
-            </div>
+      {/* Lesson Heading Summary panel */}
+      <div className="p-6 bg-[var(--white)] border-2 border-black rounded-xl shadow-[4px_4px_0px_#111111] flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="space-y-1">
+          <div className="flex items-center gap-1.5 text-[10px] font-mono font-bold text-gray-500 uppercase tracking-widest">
+            <BookOpen className="w-3.5 h-3.5 text-black dark:text-white" /> active_syllabus_node
+          </div>
+          <h1 className="text-2xl font-black uppercase tracking-tight leading-tight">
+            {lesson.title}
+          </h1>
         </div>
-    );
+        
+        {completed && (
+          <span className="sm:self-center inline-flex items-center gap-1.5 px-3 py-1.5 border-2 border-black bg-[var(--green)] text-black rounded-md font-mono text-[10px] font-black uppercase tracking-wide shadow-[2px_2px_0px_#111111]">
+            <CheckCircle className="h-4 w-4" /> Completed ✓
+          </span>
+        )}
+      </div>
+
+      {/* Central Markdown Reading Field */}
+      <article className="p-6 sm:p-8 bg-[#FBF8F1] dark:bg-slate-900 border-2 border-black rounded-xl shadow-[4px_4px_0px_#111111] prose max-w-none prose-headings:font-display prose-headings:uppercase prose-headings:font-black prose-headings:text-black dark:prose-headings:text-white prose-p:text-xs prose-p:font-medium prose-p:leading-relaxed text-[var(--black)]">
+        <div dangerouslySetInnerHTML={{ __html: lesson.content }} />
+      </article>
+
+      {/* QUIZ WORKSPACE GRID BLOCK */}
+      <div className="border-t-4 border-dashed border-black/20 pt-6 space-y-6">
+        <div className="flex items-center justify-between flex-wrap gap-4">
+          <h2 className="text-lg font-black uppercase tracking-tight">
+            Knowledge Verification Matrix
+          </h2>
+          {!quiz && !completed && (
+            <button
+              onClick={handleMarkCompleted}
+              className="font-mono text-[11px] font-black uppercase tracking-wide text-[var(--blue)] border-b-2 border-black dark:border-white pb-0.5 cursor-pointer"
+            >
+              Skip evaluation layout →
+            </button>
+          )}
+        </div>
+
+        {!quiz ? (
+          <div className="bg-[var(--white)] border-2 border-black rounded-xl p-8 text-center shadow-[4px_4px_0px_#111111]">
+            <span className="text-2xl border border-black p-1 bg-white rounded-md inline-block shadow-[1.5px_1.5px_0px_#111111]">📝</span>
+            <h3 className="font-display font-black text-xs uppercase mt-4 tracking-wide">Test Your Knowledge</h3>
+            <p className="text-xs text-gray-500 font-medium max-w-sm mx-auto mt-1">Generate an automated, platform-specific questionnaire snapshot calibrated directly to this material.</p>
+            <button
+              onClick={handleGenerateQuiz}
+              disabled={quizLoading}
+              className="mt-6 inline-flex items-center gap-2 border-2 border-black bg-[var(--green)] text-black px-5 py-3 font-mono text-xs font-black uppercase tracking-wider rounded-lg shadow-[4px_4px_0px_#111111] hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-[3px_3px_0px_#111111] disabled:opacity-50 cursor-pointer select-none"
+            >
+              <Sparkles className="w-4 h-4" />
+              {quizLoading ? 'Compiling evaluation parameters...' : 'Generate AI Quiz'}
+            </button>
+          </div>
+        ) : (
+          <div className="space-y-6">
+            {quiz.questions.map((q, idx) => (
+              <QuizQuestion
+                key={idx}
+                question={q.question}
+                options={q.options}
+                correctIndex={q.correctIndex}
+                selectedOption={answers[idx] ?? null}
+                onAnswer={(optIdx) => handleAnswer(idx, optIdx)}
+                showResult={showResults}
+              />
+            ))}
+
+            {/* Quiz Submit button link control */}
+            {!showResults && (
+              <button
+                onClick={handleSubmitQuiz}
+                disabled={Object.keys(answers).length < quiz.questions.length}
+                className="w-full inline-flex items-center justify-center border-2 border-black bg-[var(--blue)] text-white px-5 py-3.5 font-mono text-xs font-black uppercase tracking-widest rounded-lg shadow-[4px_4px_0px_#111111] hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-[3px_3px_0px_#111111] disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer select-none"
+              >
+                Submit Verification Logs →
+              </button>
+            )}
+
+            {/* Score Results Card Board Banner */}
+            {showResults && (
+              <div className={`p-5 border-2 border-black rounded-xl shadow-[4px_4px_0px_#111111] flex items-center gap-4 ${
+                score! >= 60 ? 'bg-[var(--green-light)] text-black' : 'bg-amber-100 text-black'
+              }`}>
+                <AlertCircle className="w-5 h-5 flex-shrink-0" />
+                <div>
+                  <h4 className="font-mono text-xs font-black uppercase tracking-wide">
+                    Evaluation Matrix Log: {score}% Complete
+                  </h4>
+                  <p className="text-xs font-medium mt-0.5">
+                    {score! >= 60 
+                      ? 'Compilers accepted input. Index threshold passed successfully.' 
+                      : 'Review the technical content details to satisfy the 60% baseline qualification filter.'
+                    }
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Sibling Node Pagination Router Footer Row */}
+      <div className="flex items-center justify-between gap-4 mt-12 pt-6 border-t-2 border-dashed border-black/20">
+        {prevLessonId ? (
+          <Link
+            href={`/dashboard/courses/${courseId}/lesson/${prevLessonId}`}
+            className="inline-flex items-center justify-center border-2 border-black bg-white text-black px-4 py-2.5 font-mono text-[11px] font-black uppercase tracking-wider rounded-lg shadow-[3px_3px_0px_#111111] hover:translate-x-[0.5px] hover:translate-y-[0.5px] hover:shadow-[2px_2px_0px_#111111] transition-all"
+          >
+            ← Previous Node
+          </Link>
+        ) : (
+          <div />
+        )}
+
+        {nextLessonId && (
+          <Link
+            href={`/dashboard/courses/${courseId}/lesson/${nextLessonId}`}
+            className="inline-flex items-center justify-center border-2 border-black bg-[var(--orange)] text-black px-4 py-2.5 font-mono text-[11px] font-black uppercase tracking-wider rounded-lg shadow-[3px_3px_0px_#111111] hover:translate-x-[0.5px] hover:translate-y-[0.5px] hover:shadow-[2px_2px_0px_#111111] transition-all"
+          >
+            Next Node →
+          </Link>
+        )}
+      </div>
+    </div>
+  );
 }
