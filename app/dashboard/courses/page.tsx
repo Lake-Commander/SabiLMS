@@ -45,7 +45,7 @@ export default async function CoursesPage({
           Curriculum
         </span>
         <span className="text-xs text-gray-500 font-bold font-mono uppercase tracking-wider">
-          / modules_catalog
+          / modules catalog
         </span>
       </div>
 
@@ -64,9 +64,9 @@ export default async function CoursesPage({
         <div className="flex flex-wrap items-center gap-1 bg-[var(--cream)] border-2 border-black p-1 rounded-lg">
           {[
             { id: 'all', label: 'All' },
-            { id: 'beginner', label: 'Beginner' },
-            { id: 'intermediate', label: 'Intermediate' },
-            { id: 'advanced', label: 'Advanced' },
+            { id: 'Beginner', label: 'Beginner' },
+            { id: 'Intermediate', label: 'Intermediate' },
+            { id: 'Advanced', label: 'Advanced' },
           ].map((tab) => {
             const isSelected = activeDifficulty === tab.id;
             return (
