@@ -2,25 +2,9 @@
 
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-//  Imported from 'next/link' instead of 'next/navigation'
-import Link from 'next/link'; 
-import { usePathname } from 'next/navigation';
-import { 
-  BookOpen, 
-  CheckCircle, 
-  Trophy, 
-  ArrowRight, 
-  Sparkles, 
-  Code, 
-  Users, 
-  LayoutDashboard, 
-  Compass, 
-  LineChart, 
-  Building2, 
-  HelpCircle,
-  Menu,
-  X
-} from 'lucide-react';
+import Link from 'next/link';
+import { BookOpen, CheckCircle, Trophy, Sparkles, Menu } from 'lucide-react';
+import Sidebar from '@/components/Sidebar';
 import Leaderboard from '@/components/Leaderboard';
 import AchievementsList from '@/components/AchievementsList';
 import CourseCard from '@/components/CourseCard';
@@ -61,146 +45,92 @@ export default function DashboardClient({
     leaderboard,
     achievements
 }: DashboardClientProps) {
-    const pathname = usePathname();
-    const [sidebarOpen, setSidebarOpen] = useState(false);
-    const firstName = user?.user_metadata?.name?.split(' ')[0] || 'Learner';
+    const [sidebarOpen, setSidebarOpen] = useState(true);
 
-    const sidebarLinks = [
-        { href: '/dashboard', label: 'Overview', icon: LayoutDashboard, exact: true },
-        { href: '/dashboard/courses', label: 'All Modules', icon: Compass },
-        { href: '/dashboard/tutor', label: 'AI Market Tutor', icon: Sparkles },
-        { href: '/simulator', label: 'Trading Simulator', icon: LineChart },
-        { href: '/brokers', label: 'Compare Brokers', icon: Building2 },
-        { href: '/dashboard/groups', label: 'Study Groups', icon: Users },
-        { href: '/dashboard/playground', label: 'Code Playground', icon: Code },
-    ];
-
-    const isLinkActive = (href: string, exact = false) => {
-        if (exact) return pathname === href;
-        return pathname.startsWith(href);
+    const handleLogout = async () => {
+        try {
+            await fetch('/auth/signout', { method: 'POST' });
+            window.location.href = '/';
+        } catch (error) {
+            console.error('Logout error:', error);
+            window.location.href = '/';
+        }
     };
 
     return (
-        <div className="min-h-screen bg-[#F1EAD9] text-[#111111] flex flex-col md:flex-row">
+        <div className="min-h-screen bg-[var(--cream)] text-[var(--black)] flex flex-col md:flex-row antialiased transition-colors duration-150">
             
-            {/* Mobile Sidebar Trigger Toggle Bar */}
-            <div className="md:hidden h-14 bg-[#FBF8F1] border-b-2 border-black px-4 flex items-center justify-between sticky top-16 z-40 w-full">
-                <span className="font-display font-black text-xs uppercase tracking-wide">Workspace Panel</span>
+            {/* Mobile Workspace Toggle Header - Only handles side panels, no structural site links */}
+            <div className="md:hidden h-14 bg-[var(--white)] border-b-2 border-black px-4 flex items-center justify-between sticky top-0 z-40 w-full text-[var(--black)]">
+                <span className="font-display font-black text-xs uppercase tracking-wide">Dashboard Workspace</span>
                 <button 
                     onClick={() => setSidebarOpen(!sidebarOpen)}
-                    className="p-1.5 border-2 border-black rounded-md bg-white text-black"
+                    className="p-1.5 border-2 border-black rounded-md bg-[var(--white)] text-[var(--black)]"
                 >
-                    {sidebarOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
+                    <Menu className="w-4 h-4" />
                 </button>
             </div>
 
-            {/* Side Navigation Control Rig */}
-            <aside className={`
-                fixed md:sticky top-[120px] md:top-16 left-0 z-30
-                w-64 h-[calc(100vh-120px)] md:h-[calc(100vh-64px)] 
-                bg-[#FBF8F1] border-r-2 border-black p-4
-                flex flex-col justify-between transition-transform duration-200
-                ${sidebarOpen ? 'translate-x-0' : '-translate-x-0 max-md:-translate-x-full'}
-            `}>
-                <div className="space-y-6">
-                    {/* Tiny User Profile Anchor */}
-                    <div className="p-3 border-2 border-black rounded-lg bg-[#F1EAD9] shadow-[2px_2px_0px_#111111] flex items-center gap-2">
-                        <div className="w-8 h-8 rounded-md bg-[#FF9864] border border-black font-mono font-black text-xs flex items-center justify-center">
-                            {firstName[0].toUpperCase()}
-                        </div>
-                        <div className="min-w-0">
-                            <div className="text-xs font-black uppercase truncate text-black">{firstName}</div>
-                            <div className="text-[10px] font-bold text-gray-500 uppercase tracking-wider font-mono">SaaS Profile</div>
-                        </div>
-                    </div>
+            {/* Isolated Retractable Application Sidebar */}
+            <Sidebar 
+                isOpen={sidebarOpen} 
+                setIsOpen={setSidebarOpen} 
+                user={user} 
+                onLogout={handleLogout} 
+            />
 
-                    {/* Navigation Control List links */}
-                    <nav className="space-y-1">
-                        {sidebarLinks.map((link) => {
-                            const Icon = link.icon;
-                            const active = isLinkActive(link.href, link.exact);
-                            return (
-                                <Link 
-                                    key={link.href}
-                                    href={link.href}
-                                    onClick={() => setSidebarOpen(false)}
-                                    className={`
-                                        flex items-center gap-3 px-3 py-2.5 rounded-lg border-2 border-transparent text-xs font-black uppercase tracking-wide transition-all
-                                        ${active 
-                                            ? 'bg-[#FF9864] border-black shadow-[2px_2px_0px_#111111]' 
-                                            : 'text-gray-700 hover:bg-[#F1EAD9] hover:border-black/10'
-                                        }
-                                    `}
-                                >
-                                    <Icon className="w-4 h-4 flex-shrink-0" />
-                                    <span>{link.label}</span>
-                                </Link>
-                            );
-                        })}
-                    </nav>
-                </div>
-
-                {/* Micro Help Footnote descriptor */}
-                <div className="text-[10px] font-bold text-gray-400 font-mono text-center uppercase tracking-widest border-t border-black/10 pt-4">
-                    SimuTrade Engine v1.1
-                </div>
-            </aside>
-
-            {/* Primary Fluid Content Workspace Engine */}
-            <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-5xl mx-auto w-full">
+            {/* Core Fluid Scroll Content Field Panel */}
+            <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-5xl mx-auto w-full overflow-y-auto">
                 <motion.div
                     variants={container}
                     initial="hidden"
                     animate="show"
                     className="space-y-8"
                 >
-                    {/* Small context badge block instead of massive banner */}
-                    <div className="flex items-center gap-2">
-                        <span className="bg-[#A2CD85] border-2 border-black text-black text-[10px] font-mono font-black px-2.5 py-0.5 rounded shadow-[1.5px_1.5px_0px_#111111] uppercase tracking-wide">
-                            Workspace Overview
+                    {/* Small Context Route Badge Marker */}
+                    <div className="flex items-center gap-2 select-none">
+                        <span className="bg-[var(--green)] border-2 border-black text-black text-[10px] font-mono font-black px-2.5 py-0.5 rounded shadow-[1.5px_1.5px_0px_#111111] uppercase tracking-wide">
+                            Overview
                         </span>
                         <span className="text-xs text-gray-500 font-bold font-mono uppercase tracking-wider">
-                            / Live Stats Engine
+                            / metrics_engine
                         </span>
                     </div>
 
-                    {/* High-Contrast Quick Stats Metrics Row */}
+                    {/* Stats Metric Row Card Layout */}
                     <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-                        {/* Stat Card 1 */}
-                        <motion.div variants={item} className="stat-card bg-[#EEF3FF]">
-                            <dt className="flex items-center gap-2 text-[10px] font-black uppercase tracking-wider text-gray-600">
+                        <motion.div variants={item} className="stat-card bg-[#EEF3FF] dark:bg-slate-900">
+                            <dt className="flex items-center gap-2 text-[10px] font-black uppercase tracking-wider text-gray-600 dark:text-gray-400">
                                 <div className="p-1.5 rounded bg-[#528CF0] border border-black text-white shadow-[1px_1px_0px_#111111]">
                                     <BookOpen className="h-3.5 w-3.5" />
                                 </div>
                                 Modules Loaded
                             </dt>
-                            <dd className="mt-3 font-mono text-3xl font-black text-black">{totalCourses}</dd>
+                            <dd className="mt-3 font-mono text-3xl font-black text-black dark:text-white">{totalCourses}</dd>
                         </motion.div>
 
-                        {/* Stat Card 2 */}
-                        <motion.div variants={item} className="stat-card bg-[#EEF7E8]">
-                            <dt className="flex items-center gap-2 text-[10px] font-black uppercase tracking-wider text-gray-600">
+                        <motion.div variants={item} className="stat-card bg-[#EEF7E8] dark:bg-slate-900">
+                            <dt className="flex items-center gap-2 text-[10px] font-black uppercase tracking-wider text-gray-600 dark:text-gray-400">
                                 <div className="p-1.5 rounded bg-[#A2CD85] border border-black text-black shadow-[1px_1px_0px_#111111]">
                                     <CheckCircle className="h-3.5 w-3.5" />
                                 </div>
                                 Lessons Completed
                             </dt>
-                            <dd className="mt-3 font-mono text-3xl font-black text-black">{lessonsCompleted}</dd>
+                            <dd className="mt-3 font-mono text-3xl font-black text-black dark:text-white">{lessonsCompleted}</dd>
                         </motion.div>
 
-                        {/* Stat Card 3 */}
-                        <motion.div variants={item} className="stat-card bg-[#FFF0E8]">
-                            <dt className="flex items-center gap-2 text-[10px] font-black uppercase tracking-wider text-gray-600">
+                        <motion.div variants={item} className="stat-card bg-[#FFF0E8] dark:bg-slate-900">
+                            <dt className="flex items-center gap-2 text-[10px] font-black uppercase tracking-wider text-gray-600 dark:text-gray-400">
                                 <div className="p-1.5 rounded bg-[#FF9864] border border-black text-black shadow-[1px_1px_0px_#111111]">
                                     <Trophy className="h-3.5 w-3.5" />
                                 </div>
                                 Mean Quiz Score
                             </dt>
-                            <dd className="mt-3 font-mono text-3xl font-black text-black">{averageScore}%</dd>
+                            <dd className="mt-3 font-mono text-3xl font-black text-black dark:text-white">{averageScore}%</dd>
                         </motion.div>
                     </div>
 
-                    {/* Core Sub-App Component Grid */}
+                    {/* Leaderboards and Accomplishments split block panel grid */}
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                         <div className="lg:col-span-2">
                             <AchievementsList achievements={achievements} />
@@ -210,56 +140,11 @@ export default function DashboardClient({
                         </div>
                     </div>
 
-                    {/* Quick Access Grid Engine */}
-                    <motion.div variants={item} className="p-5 bg-[#FBF8F1] border-2 border-black rounded-xl shadow-[4px_4px_0px_#111111]">
-                        <h2 className="text-xs font-black uppercase tracking-wider text-black mb-4 flex items-center gap-2">
-                            <Sparkles className="h-3.5 w-3.5 text-[#FF9864]" />
-                            Sub-Application Shortcuts
-                        </h2>
-                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                            <Link href="/dashboard/tutor" className="p-3 border-2 border-black rounded-lg bg-[#EEF3FF] shadow-[2px_2px_0px_#111111] hover:translate-x-[0.5px] hover:translate-y-[0.5px] hover:shadow-[1.5px_1.5px_0px_#111111] transition-all">
-                                <span className="text-lg border border-black px-1 py-0.5 bg-white rounded shadow-[1px_1px_0px_#111111]">🤖</span>
-                                <h3 className="text-[10px] font-black uppercase tracking-wide mt-2 text-black">AI Tutor</h3>
-                                <p className="text-[9px] text-gray-500 font-bold mt-0.5 leading-tight">Chat with virtual aids.</p>
-                            </Link>
-
-                            <Link href="/dashboard/courses" className="p-3 border-2 border-black rounded-lg bg-white shadow-[2px_2px_0px_#111111] hover:translate-x-[0.5px] hover:translate-y-[0.5px] hover:shadow-[1.5px_1.5px_0px_#111111] transition-all">
-                                <span className="text-lg border border-black px-1 py-0.5 bg-white rounded shadow-[1px_1px_0px_#111111]">📚</span>
-                                <h3 className="text-[10px] font-black uppercase tracking-wide mt-2 text-black">Curriculum</h3>
-                                <p className="text-[9px] text-gray-500 font-bold mt-0.5 leading-tight">Browse training loops.</p>
-                            </Link>
-
-                            <Link href="/dashboard/groups" className="p-3 border-2 border-black rounded-lg bg-[#EEF3FF] shadow-[2px_2px_0px_#111111] hover:translate-x-[0.5px] hover:translate-y-[0.5px] hover:shadow-[1.5px_1.5px_0px_#111111] transition-all">
-                                <span className="text-lg border border-black px-1 py-0.5 bg-white rounded shadow-[1px_1px_0px_#111111]">👥</span>
-                                <h3 className="text-[10px] font-black uppercase tracking-wide mt-2 text-black">Study Groups</h3>
-                                <p className="text-[9px] text-gray-500 font-bold mt-0.5 leading-tight">Sync up with active circles.</p>
-                            </Link>
-
-                            <Link href="/dashboard/playground" className="p-3 border-2 border-black rounded-lg bg-white shadow-[2px_2px_0px_#111111] hover:translate-x-[0.5px] hover:translate-y-[0.5px] hover:shadow-[1.5px_1.5px_0px_#111111] transition-all">
-                                <span className="text-lg border border-black px-1 py-0.5 bg-white rounded shadow-[1px_1px_0px_#111111]">🐍</span>
-                                <h3 className="text-[10px] font-black uppercase tracking-wide mt-2 text-black">Playground</h3>
-                                <p className="text-[9px] text-gray-500 font-bold mt-0.5 leading-tight">Run sandbox coding frames.</p>
-                            </Link>
-
-                            <Link href="/simulator" className="p-3 border-2 border-black rounded-lg bg-[#EEF7E8] shadow-[2px_2px_0px_#111111] hover:translate-x-[0.5px] hover:translate-y-[0.5px] hover:shadow-[1.5px_1.5px_0px_#111111] transition-all">
-                                <span className="text-lg border border-black px-1 py-0.5 bg-white rounded shadow-[1px_1px_0px_#111111]">📊</span>
-                                <h3 className="text-[10px] font-black uppercase tracking-wide mt-2 text-black">Simulator</h3>
-                                <p className="text-[9px] text-gray-500 font-bold mt-0.5 leading-tight">Test paper investments.</p>
-                            </Link>
-
-                            <Link href="/brokers" className="p-3 border-2 border-black rounded-lg bg-[#FFF0E8] shadow-[2px_2px_0px_#111111] hover:translate-x-[0.5px] hover:translate-y-[0.5px] hover:shadow-[1.5px_1.5px_0px_#111111] transition-all">
-                                <span className="text-lg border border-black px-1 py-0.5 bg-white rounded shadow-[1px_1px_0px_#111111]">🏛️</span>
-                                <h3 className="text-[10px] font-black uppercase tracking-wide mt-2 text-black">Brokers</h3>
-                                <p className="text-[9px] text-gray-500 font-bold mt-0.5 leading-tight">Audit secure trading channels.</p>
-                            </Link>
-                        </div>
-                    </motion.div>
-
-                    {/* Recommended Resource Tracks Card Grid */}
+                    {/* Recommended Content Sections Module Loader List */}
                     <motion.div variants={item}>
                         <div className="flex items-center justify-between mb-4">
-                            <h2 className="text-xs font-black uppercase tracking-wider text-black">Recommended Modules For You</h2>
-                            <Link href="/dashboard/courses" className="text-[10px] font-black text-[#528CF0] border-b-2 border-black uppercase tracking-wider pb-0.5 hover:text-blue-600 transition-colors">
+                            <h2 className="text-xs font-black uppercase tracking-wider text-[var(--black)]">Recommended Modules For You</h2>
+                            <Link href="/dashboard/courses" className="text-[10px] font-black text-[var(--blue)] border-b-2 border-black dark:border-white uppercase tracking-wider pb-0.5 hover:text-blue-500 transition-colors">
                                 View Full Syllabus →
                             </Link>
                         </div>
