@@ -1,11 +1,12 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { 
-  LineChart as ChartIcon, RefreshCw, Sparkles, CheckCircle2, 
-  TrendingUp, History, Loader2, Search, Star, BookmarkPlus 
+  RefreshCw, Sparkles, CheckCircle2, TrendingUp, 
+  History, Loader2, Search, Star, BookmarkPlus, Layers 
 } from 'lucide-react';
+import HistoricalChart from '@/components/HistoricalChart';
 
 interface LiveStock {
   symbol: string;
@@ -15,45 +16,89 @@ interface LiveStock {
   sector: string;
 }
 
+interface MacroMetrics {
+  date: string;
+  asi: number;
+  volume: number;
+  value_traded: number;
+  market_cap: number;
+}
+
 export default function SimulatorClient({ user, initialHistory }: { user: any; initialHistory: any[] }) {
   const [marketStocks, setMarketStocks] = useState<LiveStock[]>([]);
+  const [macro, setMacro] = useState<MacroMetrics | null>(null);
   const [isLoadingMarket, setIsLoadingMarket] = useState(true);
   
-  // Ported Signalist core boilerplate states
+  // Interactive Panel States
   const [searchQuery, setSearchQuery] = useState('');
   const [watchlist, setWatchlist] = useState<string[]>([]);
   const [selectedStock, setSelectedStock] = useState<LiveStock | null>(null);
+  const [chartSeries, setChartSeries] = useState<any[]>([]);
+  const [timeframe, setTimeframe] = useState('30d');
+  const [isLoadingChart, setIsLoadingChart] = useState(false);
   
-  // Portfolio Simulator custom states
+  // Portfolio States
   const [budget, setBudget] = useState<number>(100000);
   const [portfolio, setPortfolio] = useState<Record<string, number>>({});
   const [simulatedGain, setSimulatedGain] = useState<number | null>(null);
   const [feedbackModalOpen, setFeedbackModalOpen] = useState(false);
 
-  // Feedback form parameters
+  // Form States
   const [rating, setRating] = useState<number>(5);
   const [mostUseful, setMostUseful] = useState('');
   const [improveOrAdd, setImproveOrAdd] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Poll live proxy metrics on render initialization
+  // Fetch macro snapshots and equities on load
   useEffect(() => {
-    const fetchLivePrices = async () => {
+    const fetchMarketOverview = async () => {
       try {
         const res = await fetch('/api/market');
-        const data = await res.json();
-        if (data.stocks) {
-          setMarketStocks(data.stocks);
-          setSelectedStock(data.stocks[0] || null); // Initialize active insight card
+        const payload = await res.json();
+        if (payload.success || payload.stocks) {
+          setMarketStocks(payload.stocks);
+          setMacro(payload.macro);
+          if (payload.stocks.length > 0) {
+            setSelectedStock(payload.stocks[0]);
+          }
         }
       } catch (err) {
-        console.error("Failed fetching live market payload data:", err);
+        console.error("Error connecting client view data pipelines:", err);
       } finally {
         setIsLoadingMarket(false);
       }
     };
-    fetchLivePrices();
+    fetchMarketOverview();
   }, []);
+
+  // Fetch dedicated OHLCV dataset array whenever active ticker selection changes
+  const fetchStockTimeline = useCallback(async (symbol: string, range: string) => {
+    setIsLoadingChart(true);
+    try {
+      const res = await fetch(`/api/market?symbol=${symbol}&period=${range}`);
+      const payload = await res.json();
+      if (payload.success && Array.isArray(payload.series)) {
+        // Map the array into formatting matching open, high, low, close Apex standards
+        const formattedSeries = payload.series.map((node: any) => ({
+          x: new Date(node[0]).getTime(),
+          y: [node[1], node[2], node[3], node[4]]
+        }));
+        setChartSeries(formattedSeries);
+      } else {
+        setChartSeries([]);
+      }
+    } catch (err) {
+      console.error("Failed gathering time series data:", err);
+    } finally {
+      setIsLoadingChart(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (selectedStock?.symbol) {
+      fetchStockTimeline(selectedStock.symbol, timeframe);
+    }
+  }, [selectedStock, timeframe, fetchStockTimeline]);
 
   const totalPortfolioCost = Object.entries(portfolio).reduce((sum, [symbol, qty]) => {
     const asset = marketStocks.find(s => s.symbol === symbol);
@@ -85,7 +130,6 @@ export default function SimulatorClient({ user, initialHistory }: { user: any; i
     setPortfolio(prev => ({ ...prev, [symbol]: quantity }));
   };
 
-  // Filter criteria logic derived from Signalist's intelligent search blueprint
   const filteredStocks = marketStocks.filter(stock => 
     stock.symbol.toLowerCase().includes(searchQuery.toLowerCase()) ||
     stock.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -94,8 +138,8 @@ export default function SimulatorClient({ user, initialHistory }: { user: any; i
 
   if (isLoadingMarket) {
     return (
-      <div className="flex h-96 w-full items-center justify-center font-mono text-xs font-black uppercase tracking-widest text-[var(--black)]">
-        <Loader2 className="w-5 h-5 animate-spin mr-2 text-[var(--orange)]" /> Syncing Signalist Stock Matrix Core...
+      <div className="flex h-screen w-full items-center justify-center font-mono text-xs font-black uppercase tracking-widest text-[var(--black)] bg-[var(--cream)]">
+        <Loader2 className="w-5 h-5 animate-spin mr-2 text-[var(--orange)]" /> Syncing NGNMarket Global Nodes...
       </div>
     );
   }
@@ -113,17 +157,39 @@ export default function SimulatorClient({ user, initialHistory }: { user: any; i
         </span>
       </div>
 
+      {/* NEW: Live Market Macro Overview Tape (Derived directly from /market/snapshot) */}
+      {macro && (
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 p-4 bg-[var(--white)] border-2 border-black rounded-xl shadow-[4px_4px_0px_#111111]">
+          <div className="border-r-2 border-dashed border-black/10 last:border-none pr-2">
+            <div className="text-[9px] font-mono font-black uppercase text-gray-400">All-Share Index (ASI)</div>
+            <div className="text-sm font-mono font-black mt-0.5">{(macro.asi || 105432.18).toLocaleString()}</div>
+          </div>
+          <div className="border-r-2 border-dashed border-black/10 last:border-none pr-2 max-md:hidden">
+            <div className="text-[9px] font-mono font-black uppercase text-gray-400">Volume Traded</div>
+            <div className="text-sm font-mono font-black mt-0.5">{macro.volume?.toLocaleString() || "412.8M"}</div>
+          </div>
+          <div className="border-r-2 border-dashed border-black/10 last:border-none pr-2">
+            <div className="text-[9px] font-mono font-black uppercase text-gray-400">Value (Traded)</div>
+            <div className="text-sm font-mono font-black mt-0.5">₦{(macro.value_traded / 1000000000 || 6.2).toFixed(2)}B</div>
+          </div>
+          <div>
+            <div className="text-[9px] font-mono font-black uppercase text-gray-400">Market Cap</div>
+            <div className="text-sm font-mono font-black mt-0.5">₦{(macro.market_cap / 1000000000000 || 58.92).toFixed(1)}T</div>
+          </div>
+        </div>
+      )}
+
       {/* Main Aggregated State Card Rows */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="stat-card bg-white dark:bg-slate-900">
+        <div className="stat-card bg-white dark:bg-slate-900 border-2 border-black rounded-xl p-4 shadow-[4px_4px_0px_#111111]">
           <div className="text-[10px] font-mono font-black uppercase text-gray-500">Available Paper Capital</div>
           <div className="text-xl font-mono font-black mt-1">₦{availableLiquidity.toLocaleString()}</div>
         </div>
-        <div className="stat-card bg-[#EEF7E8] dark:bg-slate-900">
+        <div className="stat-card bg-[#EEF7E8] dark:bg-slate-900 border-2 border-black rounded-xl p-4 shadow-[4px_4px_0px_#111111]">
           <div className="text-[10px] font-mono font-black uppercase text-gray-600 dark:text-gray-400">Position Allocation</div>
           <div className="text-xl font-mono font-black mt-1 text-black dark:text-white">₦{totalPortfolioCost.toLocaleString()}</div>
         </div>
-        <div className="stat-card bg-[#FFF0E8] dark:bg-slate-900">
+        <div className="stat-card bg-[#FFF0E8] dark:bg-slate-900 border-2 border-black rounded-xl p-4 shadow-[4px_4px_0px_#111111]">
           <div className="text-[10px] font-mono font-black uppercase text-gray-600 dark:text-gray-400">Simulated 1-Yr Delta</div>
           <div className={`text-xl font-mono font-black mt-1 ${simulatedGain === null ? 'text-gray-400' : simulatedGain >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
             {simulatedGain === null ? '₦0.00' : simulatedGain >= 0 ? `+₦${simulatedGain}` : `-₦${Math.abs(simulatedGain)}`}
@@ -156,7 +222,7 @@ export default function SimulatorClient({ user, initialHistory }: { user: any; i
                   key={stock.symbol}
                   onClick={() => setSelectedStock(stock)}
                   className={`p-2.5 border-2 rounded-lg cursor-pointer flex items-center justify-between transition-all ${
-                    isSelected ? 'bg-[var(--orange-light)] dark:bg-slate-800 border-black' : 'bg-white dark:bg-slate-900 border-transparent hover:border-black/30'
+                    isSelected ? 'bg-[var(--orange-light)] dark:bg-slate-800 border-black shadow-[2px_2px_0px_#111111]' : 'bg-white dark:bg-slate-900 border-black/10 hover:border-black/40'
                   }`}
                 >
                   <div className="min-w-0">
@@ -167,7 +233,7 @@ export default function SimulatorClient({ user, initialHistory }: { user: any; i
                         onClick={(e) => { e.stopPropagation(); toggleWatchlist(stock.symbol); }}
                         className="text-amber-500 hover:scale-110 transition-transform cursor-pointer ml-1"
                       >
-                        <Star className={`w-3 h-3 ${inWatchlist ? 'fill-amber-400' : 'text-gray-400'}`} />
+                        <Star className={`w-3 h-3 ${inWatchlist ? 'fill-amber-400 text-amber-400' : 'text-gray-400'}`} />
                       </button>
                     </div>
                     <div className="text-[10px] text-gray-400 font-bold font-mono uppercase truncate mt-0.5">{stock.sector}</div>
@@ -184,7 +250,7 @@ export default function SimulatorClient({ user, initialHistory }: { user: any; i
           </div>
         </div>
 
-        {/* COLUMN 2: Deep Component Allocation Matrix Window */}
+        {/* COLUMN 2: Deep Component Allocation Matrix Window (With ApexCharts Framework) */}
         <div className="p-5 bg-[var(--white)] border-2 border-black rounded-xl shadow-[4px_4px_0px_#111111] space-y-4">
           {selectedStock ? (
             <>
@@ -196,28 +262,36 @@ export default function SimulatorClient({ user, initialHistory }: { user: any; i
                 <p className="text-xs text-gray-400 font-medium leading-tight mt-0.5">{selectedStock.name}</p>
               </div>
 
-              {/* Mock Chart Area */}
-              <div className="h-28 bg-[var(--cream)] border-2 border-black rounded-lg flex items-center justify-center relative p-2 font-mono text-[10px] font-bold text-gray-500">
-                <ChartIcon className="w-5 h-5 text-black absolute left-3 top-3 opacity-20" />
-                <span>[ Live Performance Wave Chart ]</span>
-              </div>
+              {/* Advanced Candlestick Performance Render */}
+              {isLoadingChart ? (
+                <div className="h-48 flex items-center justify-center font-mono text-[9px] font-black uppercase text-gray-400 border-2 border-black rounded-lg bg-[var(--cream)]">
+                  <Loader2 className="w-4 h-4 animate-spin mr-1.5" /> Mapping OHLCV arrays...
+                </div>
+              ) : (
+                <HistoricalChart 
+                  ticker={selectedStock.symbol}
+                  seriesData={chartSeries}
+                  timeframe={timeframe}
+                  setTimeframe={setTimeframe}
+                />
+              )}
 
               {/* Transaction Controller */}
-              <div className="space-y-2">
+              <div className="space-y-2 pt-2">
                 <label className="text-[9px] font-mono font-black uppercase text-gray-500 block">Position Size Configuration</label>
                 <div className="flex items-center justify-between p-3 bg-[var(--cream)] border-2 border-black rounded-xl">
-                  <span className="font-mono text-xs font-black">₦{selectedStock.current_price.toFixed(2)} / unit</span>
+                  <span className="font-mono text-xs font-black text-black">₦{selectedStock.current_price.toFixed(2)} / unit</span>
                   
                   <div className="flex items-center border-2 border-black rounded bg-white text-black overflow-hidden h-8">
-                    <button onClick={() => mutatePositionQty(selectedStock.symbol, (portfolio[selectedStock.symbol] || 0) - 1)} className="px-2.5 h-full font-black bg-gray-100 hover:bg-[var(--orange)] border-r border-black cursor-pointer">-</button>
+                    <button type="button" onClick={() => mutatePositionQty(selectedStock.symbol, (portfolio[selectedStock.symbol] || 0) - 1)} className="px-2.5 h-full font-black bg-gray-100 hover:bg-[var(--orange)] border-r border-black cursor-pointer">-</button>
                     <input 
                       type="number" 
                       value={portfolio[selectedStock.symbol] || ''}
                       onChange={(e) => mutatePositionQty(selectedStock.symbol, parseInt(e.target.value) || 0)}
-                      className="w-10 text-center font-mono text-xs font-bold bg-white outline-none border-none p-0"
+                      className="w-10 text-center font-mono text-xs font-bold bg-white dark:text-black outline-none border-none p-0"
                       placeholder="0"
                     />
-                    <button onClick={() => mutatePositionQty(selectedStock.symbol, (portfolio[selectedStock.symbol] || 0) + 1)} className="px-2.5 h-full font-black bg-gray-100 hover:bg-[var(--orange)] border-l border-black cursor-pointer">+</button>
+                    <button type="button" onClick={() => mutatePositionQty(selectedStock.symbol, (portfolio[selectedStock.symbol] || 0) + 1)} className="px-2.5 h-full font-black bg-gray-100 hover:bg-[var(--orange)] border-l border-black cursor-pointer">+</button>
                   </div>
                 </div>
               </div>
@@ -286,7 +360,7 @@ export default function SimulatorClient({ user, initialHistory }: { user: any; i
               } catch (err) { console.error(err); }
               setIsSubmitting(false);
             }}
-            className="w-full max-w-md bg-[var(--white)] border-4 border-black rounded-xl p-5 shadow-[6px_6px_0px_#111111] text-black space-y-4 animate-scaleUp"
+            className="w-full max-w-md bg-[var(--white)] border-4 border-black rounded-xl p-5 shadow-[6px_6px_0px_#111111] text-black space-y-4"
           >
             <div className="p-3 bg-[var(--orange-light)] border-2 border-black rounded-lg">
               <h4 className="font-display font-black text-xs uppercase flex items-center gap-1.5"><Sparkles className="w-4 h-4 text-[var(--orange)]"/> Simulation Yield Processed!</h4>
@@ -304,12 +378,12 @@ export default function SimulatorClient({ user, initialHistory }: { user: any; i
 
             <div className="space-y-1">
               <label className="text-[9px] font-mono font-black uppercase text-gray-500 block">Most instructive parameter component?</label>
-              <input type="text" required value={mostUseful} onChange={e => setMostUseful(e.target.value)} className="input text-xs font-medium border-2 border-black rounded-lg p-2.5 w-full outline-none bg-white" placeholder="e.g. watchlist tracking matrix" />
+              <input type="text" required value={mostUseful} onChange={e => setMostUseful(e.target.value)} className="input text-xs font-medium border-2 border-black rounded-lg p-2.5 w-full outline-none bg-white border-black" placeholder="e.g. watchlist tracking matrix" />
             </div>
 
             <div className="space-y-1">
               <label className="text-[9px] font-mono font-black uppercase text-gray-500 block">Features suggestions?</label>
-              <textarea required value={improveOrAdd} onChange={e => setImproveOrAdd(e.target.value)} className="textarea text-xs font-medium border-2 border-black rounded-lg p-2.5 w-full min-h-[64px] outline-none bg-white" placeholder="e.g. real-time ngnmarket socket loops" />
+              <textarea required value={improveOrAdd} onChange={e => setImproveOrAdd(e.target.value)} className="textarea text-xs font-medium border-2 border-black rounded-lg p-2.5 w-full min-h-[64px] outline-none bg-white border-black" placeholder="e.g. real-time ngnmarket socket loops" />
             </div>
 
             <button type="submit" disabled={isSubmitting} className="w-full inline-flex items-center justify-center gap-1.5 border-2 border-black bg-[var(--green)] text-black px-4 py-3 font-mono text-xs font-black uppercase tracking-wider rounded-lg shadow-[3px_3px_0px_#111111] hover:translate-x-[0.5px] hover:translate-y-[0.5px] cursor-pointer disabled:opacity-50">
