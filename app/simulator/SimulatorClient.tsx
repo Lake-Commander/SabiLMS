@@ -7,7 +7,7 @@ import {
   Loader2, Search, Star, BookmarkPlus, Layers, ShoppingBag
 } from 'lucide-react';
 import HistoricalChart from '@/components/HistoricalChart';
-import { executeTrade } from '@/lib/actions/simulation.actions'; //  Imported server action
+import { executeTrade } from '@/lib/actions/simulation.actions'; // Imported server action
 import { toast } from 'sonner';
 
 interface LiveStock {
@@ -23,7 +23,7 @@ interface MacroMetrics {
   asi: number;
   volume: number;
   value_traded: number;
-  market_cap: number;
+  market_cap: any; // Updated to handle nested object
 }
 
 interface SimulatorClientProps {
@@ -34,7 +34,6 @@ interface SimulatorClientProps {
 }
 
 export default function SimulatorClient({ user, initialPortfolio, marketStocks, macro }: SimulatorClientProps) {
-  // ✅ Directly initialize states using the props passed from the server! No more double-fetching.
   const [portfolio, setPortfolio] = useState(initialPortfolio);
   const [searchQuery, setSearchQuery] = useState('');
   const [watchlist, setWatchlist] = useState<string[]>([]);
@@ -43,36 +42,50 @@ export default function SimulatorClient({ user, initialPortfolio, marketStocks, 
   const [timeframe, setTimeframe] = useState('30d');
   const [isLoadingChart, setIsLoadingChart] = useState(false);
   
-  // ✅ New Trade Execution States
   const [tradeType, setTradeType] = useState<'BUY' | 'SELL'>('BUY');
   const [tradeQty, setTradeQty] = useState<number>(1);
   const [isSubmittingTrade, setIsSubmittingTrade] = useState(false);
 
-  // Fetch dedicated OHLCV dataset array whenever active ticker selection changes
-  const fetchStockTimeline = useCallback(async (symbol: string, range: string) => {
-    setIsLoadingChart(true);
-    try {
-      const res = await fetch(`/api/market?symbol=${symbol}&period=${range}`);
-      const payload = await res.json();
-      if (payload.success && Array.isArray(payload.series)) {
-        const formattedSeries = payload.series.map((node: any) => ({
-          x: new Date(node[0]).getTime(),
-          y: [node[1], node[2], node[3], node[4]]
-        }));
-        setChartSeries(formattedSeries);
-      } else {
-        setChartSeries([]);
-      }
-    } catch (err) {
-      console.error("Failed gathering time series data:", err);
-    } finally {
-      setIsLoadingChart(false);
+  // Generates realistic mock chart data since NGN Free Tier blocks chart endpoints
+  const generateMockChartData = useCallback((basePrice: number, days: number) => {
+    const data = [];
+    const baseTime = new Date().getTime();
+    let current = basePrice;
+    
+    for(let i = days; i >= 0; i--) {
+      const timeOffset = baseTime - (i * 24 * 60 * 60 * 1000);
+      const open = current + (Math.random() - 0.5) * (basePrice * 0.02);
+      const close = open + (Math.random() - 0.5) * (basePrice * 0.03);
+      const high = Math.max(open, close) + (Math.random() * (basePrice * 0.01));
+      const low = Math.min(open, close) - (Math.random() * (basePrice * 0.01));
+      
+      data.push({
+        x: timeOffset,
+        y: [
+          parseFloat(open.toFixed(2)), 
+          parseFloat(high.toFixed(2)), 
+          parseFloat(low.toFixed(2)), 
+          parseFloat(close.toFixed(2))
+        ]
+      });
+      current = close; // Carry trend forward
     }
+    return data;
   }, []);
+
+  const fetchStockTimeline = useCallback(async (symbol: string, range: string, currentPrice: number) => {
+    setIsLoadingChart(true);
+    // Since API blocks this on free tier, immediately generate a realistic local mock chart
+    setTimeout(() => {
+      const days = range === '7d' ? 7 : range === '90d' ? 90 : 30;
+      setChartSeries(generateMockChartData(currentPrice, days));
+      setIsLoadingChart(false);
+    }, 400); // Small delay to simulate network request
+  }, [generateMockChartData]);
 
   useEffect(() => {
     if (selectedStock?.symbol) {
-      fetchStockTimeline(selectedStock.symbol, timeframe);
+      fetchStockTimeline(selectedStock.symbol, timeframe, selectedStock.current_price);
     }
   }, [selectedStock, timeframe, fetchStockTimeline]);
 
@@ -82,7 +95,6 @@ export default function SimulatorClient({ user, initialPortfolio, marketStocks, 
     );
   };
 
-  // ✅ Connect the form submission directly to your MongoDB server action
   const handleExecuteTrade = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedStock || tradeQty <= 0) return;
@@ -98,9 +110,9 @@ export default function SimulatorClient({ user, initialPortfolio, marketStocks, 
       );
 
       if (res.success) {
-        setPortfolio(res.portfolio); // Instantly update the UI with new DB values
+        setPortfolio(res.portfolio); 
         toast.success(`Successfully filled order: ${tradeType} ${tradeQty} units of ${selectedStock.symbol}`);
-        setTradeQty(1); // Reset the input
+        setTradeQty(1); 
       } else {
         toast.error(`Trade rejected: ${res.error}`);
       }
@@ -117,7 +129,6 @@ export default function SimulatorClient({ user, initialPortfolio, marketStocks, 
     stock.sector.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  // Extract total portfolio value from the Mongoose payload
   const holdingsCost = portfolio?.holdings ? Object.entries(portfolio.holdings).reduce((sum, [symbol, qty]) => {
     const asset = marketStocks.find(s => s.symbol === symbol);
     return sum + (asset ? asset.current_price * (qty as number) : 0);
@@ -146,7 +157,10 @@ export default function SimulatorClient({ user, initialPortfolio, marketStocks, 
           </div>
           <div>
             <div className="text-[9px] font-mono font-black uppercase text-gray-400">Market Cap</div>
-            <div className="text-sm font-mono font-black mt-0.5">₦{(macro.market_cap / 1000000000000 || 58.92).toFixed(1)}T</div>
+            {/*  Correctly targeting the nested .equity object value */}
+            <div className="text-sm font-mono font-black mt-0.5">
+              ₦{((macro.market_cap?.equity || macro.market_cap?.total || 58920000000000) / 1000000000000).toFixed(1)}T
+            </div>
           </div>
         </div>
       )}
