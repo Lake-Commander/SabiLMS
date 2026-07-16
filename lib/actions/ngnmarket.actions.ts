@@ -5,13 +5,25 @@ import { cache } from 'react';
 
 const NGN_MARKET_BASE_URL = 'https://api.ngnmarket.com/v1';
 
-// Safe fallback metrics so your simulator never crashes if the API throttles or formats change
-const FALLBACK_STOCKS = [
-  { symbol: 'MTNN', name: 'MTN Nigeria Communications PLC', current_price: 220.50, change_percent: 1.45, sector: 'Telecom' },
-  { symbol: 'DANGCEM', name: 'Dangote Cement PLC', current_price: 530.00, change_percent: -0.85, sector: 'Industrial' },
-  { symbol: 'GTCO', name: 'GTCO Holdings PLC', current_price: 44.20, change_percent: 2.15, sector: 'Banking' },
-  { symbol: 'ZENITHBANK', name: 'Zenith Bank PLC', current_price: 38.80, change_percent: 0.50, sector: 'Banking' },
-  { symbol: 'BUAFOODS', name: 'BUA Foods PLC', current_price: 315.00, change_percent: 0.00, sector: 'Consumer Goods' }
+//  The core NGX index stocks we want to track in the simulator
+const TARGET_SYMBOLS = [
+  'MTNN', 'DANGCEM', 'GTCO', 'ZENITHBANK', 'BUAFOODS', 
+  'AIRTELAFRI', 'SEPLAT', 'NESTLE', 'GEREGU', 'UBA'
+];
+
+//  Export a clean interface so TS knows exactly what this returns
+export interface NGNStock {
+  symbol: string;
+  name: string;
+  current_price: number;
+  change_percent: number;
+  sector: string;
+}
+
+//  Safe fallback metrics so your simulator never crashes
+const FALLBACK_STOCKS: NGNStock[] = [
+  { symbol: 'MTNN', name: 'MTN Nigeria', current_price: 220.50, change_percent: 1.45, sector: 'Telecom' },
+  { symbol: 'DANGCEM', name: 'Dangote Cement', current_price: 530.00, change_percent: -0.85, sector: 'Industrial' }
 ];
 
 async function fetchNGNMarket<T>(endpoint: string): Promise<T | null> {
@@ -37,7 +49,7 @@ async function fetchNGNMarket<T>(endpoint: string): Promise<T | null> {
 
     const payload = await res.json();
     
-    // Ensure we actually got a successful payload wrapper before returning the data layer
+    // Ensure we got a successful payload wrapper
     if (payload && payload.success === true && payload.data !== undefined) {
       return payload.data as T;
     }
@@ -49,63 +61,56 @@ async function fetchNGNMarket<T>(endpoint: string): Promise<T | null> {
   }
 }
 
-// Retrieve the entire list of ordinary shares active on the NGX
-export const getActiveCompanies = cache(async () => {
+//  Fetch target companies concurrently with STRICT TypeScript Returns
+export const getActiveCompanies = cache(async (): Promise<NGNStock[]> => {
   try {
-    const data = await fetchNGNMarket<any>('/companies');
-    
-    // 🛑 DEFENSIVE CHECK: Ensure data is actually an array before calling .map()
-    let rawStocks = [];
-    if (Array.isArray(data)) {
-        rawStocks = data;
-    } else if (data && Array.isArray(data.companies)) {
-        rawStocks = data.companies;
-    } else if (data && Array.isArray(data.stocks)) {
-        rawStocks = data.stocks;
-    }
+    const companies = await Promise.all(
+      TARGET_SYMBOLS.map(async (symbol) => {
+        // Correctly hitting the individual company endpoint as per NGN docs
+        const data = await fetchNGNMarket<any>(`/companies/${symbol}`);
+        if (!data) return null;
 
-    // If the API failed to return a readable array, immediately return the safe fallback
-    if (!rawStocks || rawStocks.length === 0) {
-        console.warn("NGN Market did not return a valid array of companies. Using fallback dataset.");
+        return {
+          symbol: data.symbol || symbol,
+          name: data.name || data.company_name || 'NGX Asset',
+          current_price: parseFloat(data.price || data.current_price || data.close_price || 0),
+          change_percent: parseFloat(data.price_change_percent || data.change_percent || data.percentage_change || 0),
+          sector: data.sector || 'General Market',
+        } as NGNStock;
+      })
+    );
+
+    // ✅ TYPE GUARD: Tell TypeScript we are specifically stripping out the nulls
+    const validCompanies = companies.filter((c): c is NGNStock => c !== null);
+
+    if (validCompanies.length === 0) {
         return FALLBACK_STOCKS;
     }
 
-    return rawStocks.map((s: any) => ({
-      symbol: s.symbol || s.ticker || 'EQUITY',
-      name: s.name || s.company_name || 'Nigerian Listed Asset',
-      current_price: parseFloat(s.current_price || s.price || s.close_price || 0),
-      change_percent: parseFloat(s.price_change_percent || s.change_percent || s.percentage_change || 0),
-      sector: s.sector || 'General Market',
-    }));
-    
+    return validCompanies;
   } catch (error) {
     console.error("Crash prevented in getActiveCompanies:", error);
     return FALLBACK_STOCKS;
   }
 });
 
-//  Retrieve historical OHLCV chart records for a selected ticker
+//  Retrieve historical OHLCV chart records
 export async function getStockChartTimeline(symbol: string, period: string = '30d') {
   try {
     const data = await fetchNGNMarket<any[]>(`/companies/${symbol.toUpperCase()}/chart?period=${period}&format=ohlcv`);
-    // Defensive check for the chart array
     return Array.isArray(data) ? data : [];
   } catch (error) {
     return [];
   }
 }
 
-//  Retrieve macro index values (ASI, Value Traded, Cap)
+//  Retrieve macro index values
 export async function getMarketSnapshot() {
   try {
     const data = await fetchNGNMarket<any>('/market/snapshot');
-    
-    // Ensure the returned data is a flat object and not an array or string
     if (data && typeof data === 'object' && !Array.isArray(data)) {
        return data;
     }
-    
-    // Fallback if macro endpoint fails or sends wrong shape
     return { asi: 105432.18, volume: 412850000, value_traded: 6213400000, market_cap: 58920000000000 };
   } catch (error) {
     return { asi: 105432.18, volume: 412850000, value_traded: 6213400000, market_cap: 58920000000000 };
