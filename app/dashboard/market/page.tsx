@@ -8,7 +8,6 @@ import {
 } from "@/lib/constants";
 import { createClient } from "@/lib/auth";
 import { redirect } from "next/navigation";
-import { BarChart3, Globe2, Newspaper, TrendingUp } from "lucide-react";
 
 export default async function MarketIntelligencePage() {
     const supabase = await createClient();
@@ -19,37 +18,33 @@ export default async function MarketIntelligencePage() {
     const scriptUrl = `https://s3.tradingview.com/external-embedding/embed-widget-`;
 
     return (
-        <div className="flex flex-col gap-10 w-full max-w-[1400px] mx-auto pb-16 pt-6 px-4 sm:px-6">
+        <div className="flex flex-col gap-6 w-full max-w-[1600px] mx-auto pb-12 pt-4 px-2 sm:px-4">
             
-            {/* Page Header */}
-            <div className="flex flex-col gap-3 border-b-2 border-dashed border-black/10 dark:border-white/10 pb-8">
+            {/* Minimalist Page Header */}
+            <div className="flex flex-col gap-1 border-b border-gray-200 dark:border-gray-800 pb-4">
                 <div className="flex items-center gap-3">
-                    <span className="bg-[var(--orange)] border-2 border-black text-black text-[10px] font-mono font-black px-3 py-1 rounded shadow-[2px_2px_0px_#111111] uppercase tracking-widest flex items-center gap-1.5">
-                        <span className="w-1.5 h-1.5 bg-black rounded-full animate-pulse" /> Live Feed
-                    </span>
-                    <h1 className="text-3xl md:text-4xl font-black uppercase tracking-tight text-black dark:text-white">
+                    <h1 className="text-xl md:text-2xl font-semibold tracking-tight text-gray-900 dark:text-gray-100">
                         Market Intelligence
                     </h1>
+                    <span className="bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 text-[10px] font-mono px-2 py-0.5 rounded uppercase tracking-wider">
+                        Live Data
+                    </span>
                 </div>
-                <p className="text-sm font-medium text-gray-600 dark:text-gray-400 max-w-2xl leading-relaxed">
-                    Real-time macro tracking, sectoral heatmaps, and breaking financial stories. Monitor the heartbeat of the Nigerian Stock Exchange and global assets.
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                    Real-time macro tracking, sectoral heatmaps, and breaking financial stories.
                 </p>
             </div>
 
             {/* Row 1: Macro & Heatmap */}
-            <section className="space-y-4">
-                <div className="flex items-center gap-2 px-1">
-                    <Globe2 className="w-5 h-5 text-gray-500" />
-                    <h2 className="text-sm font-black uppercase tracking-wider text-gray-700 dark:text-gray-300">
-                        Sector Performance & Overview
-                    </h2>
-                </div>
+            <section className="space-y-3">
+                <h2 className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 px-1">
+                    Sector Performance & Overview
+                </h2>
                 
-                <div className="grid w-full gap-6 lg:grid-cols-3">
+                <div className="grid w-full gap-4 lg:grid-cols-3">
                     {/* Market Overview */}
-                    <div className="lg:col-span-1 h-[550px] relative bg-white dark:bg-[#111111] rounded-xl overflow-hidden border-2 border-black dark:border-white/20 shadow-[4px_4px_0px_#111111] dark:shadow-[4px_4px_0px_#000000] transition-all hover:-translate-y-1 hover:shadow-[6px_6px_0px_#111111]">
+                    <div className="lg:col-span-1 h-[550px] relative bg-white dark:bg-[#131722] rounded border border-gray-200 dark:border-[#2a2e39] overflow-hidden shadow-sm">
                         <TradingViewWidget
-                            title="Market Overview"
                             scriptUrl={`${scriptUrl}market-overview.js`}
                             config={MARKET_OVERVIEW_WIDGET_CONFIG}
                             className="absolute inset-0 w-full h-full"
@@ -58,9 +53,8 @@ export default async function MarketIntelligencePage() {
                     </div>
 
                     {/* Heatmap */}
-                    <div className="lg:col-span-2 h-[550px] relative bg-white dark:bg-[#111111] rounded-xl overflow-hidden border-2 border-black dark:border-white/20 shadow-[4px_4px_0px_#111111] dark:shadow-[4px_4px_0px_#000000] transition-all hover:-translate-y-1 hover:shadow-[6px_6px_0px_#111111]">
+                    <div className="lg:col-span-2 h-[550px] relative bg-white dark:bg-[#131722] rounded border border-gray-200 dark:border-[#2a2e39] overflow-hidden shadow-sm">
                         <TradingViewWidget
-                            title="Stock Heatmap"
                             scriptUrl={`${scriptUrl}stock-heatmap.js`}
                             config={HEATMAP_WIDGET_CONFIG}
                             className="absolute inset-0 w-full h-full"
@@ -71,19 +65,14 @@ export default async function MarketIntelligencePage() {
             </section>
 
             {/* Row 2: News & Quotes */}
-            <section className="space-y-4 pt-4">
-                <div className="flex items-center justify-between px-1">
-                    <div className="flex items-center gap-2">
-                        <Newspaper className="w-5 h-5 text-gray-500" />
-                        <h2 className="text-sm font-black uppercase tracking-wider text-gray-700 dark:text-gray-300">
-                            Live Quotes & Press
-                        </h2>
-                    </div>
-                </div>
+            <section className="space-y-3 pt-2">
+                <h2 className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 px-1">
+                    Live Quotes & Press
+                </h2>
 
-                <div className="grid w-full gap-6 lg:grid-cols-3">
+                <div className="grid w-full gap-4 lg:grid-cols-3">
                     {/* Top Stories Timeline */}
-                    <div className="lg:col-span-1 h-[600px] relative bg-white dark:bg-[#111111] rounded-xl overflow-hidden border-2 border-black dark:border-white/20 shadow-[4px_4px_0px_#111111] dark:shadow-[4px_4px_0px_#000000] transition-all hover:-translate-y-1 hover:shadow-[6px_6px_0px_#111111]">
+                    <div className="lg:col-span-1 h-[600px] relative bg-white dark:bg-[#131722] rounded border border-gray-200 dark:border-[#2a2e39] overflow-hidden shadow-sm">
                         <TradingViewWidget
                             scriptUrl={`${scriptUrl}timeline.js`}
                             config={TOP_STORIES_WIDGET_CONFIG}
@@ -93,7 +82,7 @@ export default async function MarketIntelligencePage() {
                     </div>
 
                     {/* Market Quotes Screener */}
-                    <div className="lg:col-span-2 h-[600px] relative bg-white dark:bg-[#111111] rounded-xl overflow-hidden border-2 border-black dark:border-white/20 shadow-[4px_4px_0px_#111111] dark:shadow-[4px_4px_0px_#000000] transition-all hover:-translate-y-1 hover:shadow-[6px_6px_0px_#111111]">
+                    <div className="lg:col-span-2 h-[600px] relative bg-white dark:bg-[#131722] rounded border border-gray-200 dark:border-[#2a2e39] overflow-hidden shadow-sm">
                         <TradingViewWidget
                             scriptUrl={`${scriptUrl}market-quotes.js`}
                             config={MARKET_DATA_WIDGET_CONFIG}
