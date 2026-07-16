@@ -22,10 +22,10 @@ export default function MarketClient() {
 
     if (!mounted) return null; 
 
-    // Determine standard TradingView theme properties
+    // Determine standard TradingView theme properties synced to your app's theme
     const isDark = resolvedTheme === 'dark';
     const tvTheme = isDark ? 'dark' : 'light';
-    const bgColor = isDark ? '#131722' : '#ffffff';
+    const bgColor = isDark ? '#111111' : '#ffffff'; // Match Neo-Brutalist backgrounds
     
     const scriptUrl = `https://s3.tradingview.com/external-embedding/embed-widget-`;
 
@@ -38,34 +38,36 @@ export default function MarketClient() {
     });
 
     return (
-        <div className="flex flex-col gap-6 w-full max-w-[1600px] mx-auto pb-12 pt-4 px-2 sm:px-4">
+        <div className="flex flex-col gap-10 w-full max-w-[1400px] mx-auto pb-16 pt-6 px-4 sm:px-6">
             
-            {/* Minimalist Page Header */}
-            <div className="flex flex-col gap-1 border-b border-gray-200 dark:border-[#2a2e39] pb-4">
+            {/* Neo-Brutalist Page Header */}
+            <div className="flex flex-col gap-3 border-b-2 border-dashed border-black/10 dark:border-white/10 pb-8">
                 <div className="flex items-center gap-3">
-                    <h1 className="text-xl md:text-2xl font-semibold tracking-tight text-gray-900 dark:text-gray-100">
+                    <span className="bg-[var(--orange)] border-2 border-black text-black text-[10px] font-mono font-black px-3 py-1 rounded shadow-[2.5px_2.5px_0px_#111111] uppercase tracking-widest flex items-center gap-1.5">
+                        <span className="w-1.5 h-1.5 bg-black rounded-full animate-pulse" /> Live Feed
+                    </span>
+                    <h1 className="text-3xl md:text-4xl font-black uppercase tracking-tight text-black dark:text-white">
                         Market Intelligence
                     </h1>
-                    <span className="bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 text-[10px] font-mono px-2 py-0.5 rounded uppercase tracking-wider">
-                        Live Data
-                    </span>
                 </div>
-                <p className="text-xs text-gray-500 dark:text-gray-400">
-                    Real-time macro tracking, sectoral heatmaps, and breaking financial stories.
+                <p className="text-sm font-bold text-gray-600 dark:text-gray-400 max-w-2xl leading-relaxed">
+                    Real-time macro tracking, sectoral heatmaps, and breaking financial stories. Monitor the heartbeat of the Nigerian Stock Exchange and global assets.
                 </p>
             </div>
 
             {/* Row 1: Macro & Heatmap */}
-            <section className="space-y-3">
-                <h2 className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 px-1">
-                    Sector Performance & Overview
-                </h2>
+            <section className="space-y-4">
+                <div className="flex items-center gap-2 px-1">
+                    <h2 className="text-sm font-black uppercase tracking-wider text-black dark:text-white">
+                        Sector Performance & Overview
+                    </h2>
+                </div>
                 
-                <div className="grid w-full gap-4 lg:grid-cols-3">
+                <div className="grid w-full gap-6 lg:grid-cols-3">
                     {/* Market Overview */}
-                    <div className="lg:col-span-1 h-[550px] relative bg-white dark:bg-[#131722] rounded border border-gray-200 dark:border-[#2a2e39] overflow-hidden shadow-sm">
+                    <div className="lg:col-span-1 h-[550px] relative bg-white dark:bg-[#111111] rounded-xl overflow-hidden border-2 border-black dark:border-white/20 shadow-[6px_6px_0px_#111111] dark:shadow-[6px_6px_0px_#ffffff20] transition-all hover:-translate-y-1 hover:shadow-[8px_8px_0px_#111111] dark:hover:shadow-[8px_8px_0px_#ffffff20]">
                         <TradingViewWidget
-                            key={`overview-${tvTheme}`} // Forces re-render on theme change
+                            key={`overview-${tvTheme}`} // Forces secure iframe re-render on theme toggle
                             scriptUrl={`${scriptUrl}market-overview.js`}
                             config={getThemeConfig(MARKET_OVERVIEW_WIDGET_CONFIG)}
                             className="absolute inset-0 w-full h-full"
@@ -74,7 +76,7 @@ export default function MarketClient() {
                     </div>
 
                     {/* Heatmap */}
-                    <div className="lg:col-span-2 h-[550px] relative bg-white dark:bg-[#131722] rounded border border-gray-200 dark:border-[#2a2e39] overflow-hidden shadow-sm">
+                    <div className="lg:col-span-2 h-[550px] relative bg-white dark:bg-[#111111] rounded-xl overflow-hidden border-2 border-black dark:border-white/20 shadow-[6px_6px_0px_#111111] dark:shadow-[6px_6px_0px_#ffffff20] transition-all hover:-translate-y-1 hover:shadow-[8px_8px_0px_#111111] dark:hover:shadow-[8px_8px_0px_#ffffff20]">
                         <TradingViewWidget
                             key={`heatmap-${tvTheme}`}
                             scriptUrl={`${scriptUrl}stock-heatmap.js`}
@@ -87,14 +89,16 @@ export default function MarketClient() {
             </section>
 
             {/* Row 2: News & Quotes */}
-            <section className="space-y-3 pt-2">
-                <h2 className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 px-1">
-                    Live Quotes & Press
-                </h2>
+            <section className="space-y-4 pt-4">
+                <div className="flex items-center justify-between px-1">
+                    <h2 className="text-sm font-black uppercase tracking-wider text-black dark:text-white">
+                        Live Quotes & Press
+                    </h2>
+                </div>
 
-                <div className="grid w-full gap-4 lg:grid-cols-3">
+                <div className="grid w-full gap-6 lg:grid-cols-3">
                     {/* Top Stories Timeline */}
-                    <div className="lg:col-span-1 h-[600px] relative bg-white dark:bg-[#131722] rounded border border-gray-200 dark:border-[#2a2e39] overflow-hidden shadow-sm">
+                    <div className="lg:col-span-1 h-[600px] relative bg-white dark:bg-[#111111] rounded-xl overflow-hidden border-2 border-black dark:border-white/20 shadow-[6px_6px_0px_#111111] dark:shadow-[6px_6px_0px_#ffffff20] transition-all hover:-translate-y-1 hover:shadow-[8px_8px_0px_#111111] dark:hover:shadow-[8px_8px_0px_#ffffff20]">
                         <TradingViewWidget
                             key={`stories-${tvTheme}`}
                             scriptUrl={`${scriptUrl}timeline.js`}
@@ -105,11 +109,11 @@ export default function MarketClient() {
                     </div>
 
                     {/* Market Quotes Screener */}
-                    <div className="lg:col-span-2 h-[600px] relative bg-white dark:bg-[#131722] rounded border border-gray-200 dark:border-[#2a2e39] overflow-hidden shadow-sm">
+                    <div className="lg:col-span-2 h-[600px] relative bg-white dark:bg-[#111111] rounded-xl overflow-hidden border-2 border-black dark:border-white/20 shadow-[6px_6px_0px_#111111] dark:shadow-[6px_6px_0px_#ffffff20] transition-all hover:-translate-y-1 hover:shadow-[8px_8px_0px_#111111] dark:hover:shadow-[8px_8px_0px_#ffffff20]">
                         <TradingViewWidget
                             key={`quotes-${tvTheme}`}
                             scriptUrl={`${scriptUrl}market-quotes.js`}
-                            config={getThemeConfig(MARKET_DATA_WIDGET_CONFIG, true)} // Forces solid bg for quotes table legibility
+                            config={getThemeConfig(MARKET_DATA_WIDGET_CONFIG, true)} // Forces solid bg so text doesn't clash with table lines
                             className="absolute inset-0 w-full h-full"
                             height={600}
                         />
