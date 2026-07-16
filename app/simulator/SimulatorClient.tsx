@@ -7,7 +7,7 @@ import {
   Loader2, Search, Star, BookmarkPlus, Layers, ShoppingBag
 } from 'lucide-react';
 import HistoricalChart from '@/components/HistoricalChart';
-import { executeTrade } from '@/lib/actions/simulation.actions'; // ✅ Imported your server action
+import { executeTrade } from '@/lib/actions/simulation.actions'; //  Imported server action
 import { toast } from 'sonner';
 
 interface LiveStock {
