@@ -143,8 +143,8 @@ export const MARKET_OVERVIEW_WIDGET_CONFIG = {
 };
 
 export const HEATMAP_WIDGET_CONFIG = {
-    exchanges: ['NSENG'], // Explicitly targets the Nigerian Stock Exchange
-    dataSource: 'NGX30', // Uses the NGX 30 Index for a clean, reliable heatmap
+    market: 'nigeria', // Targets the entire NGX market
+    dataSource: '',    // Must be strictly empty when using 'market'
     blockSize: 'market_cap_basic',
     blockColor: 'change',
     grouping: 'sector',
