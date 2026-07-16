@@ -1,17 +1,15 @@
-// lib/actions/ngnmarket.actions.ts
+// check2/lib/actions/ngnmarket.actions.ts
 'use server';
 
 import { cache } from 'react';
 
 const NGN_MARKET_BASE_URL = 'https://api.ngnmarket.com/v1';
 
-//  The core NGX index stocks we want to track in the simulator
 const TARGET_SYMBOLS = [
   'MTNN', 'DANGCEM', 'GTCO', 'ZENITHBANK', 'BUAFOODS', 
   'AIRTELAFRI', 'SEPLAT', 'NESTLE', 'GEREGU', 'UBA'
 ];
 
-//  Export a clean interface so TS knows exactly what this returns
 export interface NGNStock {
   symbol: string;
   name: string;
@@ -20,18 +18,21 @@ export interface NGNStock {
   sector: string;
 }
 
-//  Safe fallback metrics so your simulator never crashes
+// 🛡️ Safe fallback metrics for Free Tier users
 const FALLBACK_STOCKS: NGNStock[] = [
   { symbol: 'MTNN', name: 'MTN Nigeria', current_price: 220.50, change_percent: 1.45, sector: 'Telecom' },
-  { symbol: 'DANGCEM', name: 'Dangote Cement', current_price: 530.00, change_percent: -0.85, sector: 'Industrial' }
+  { symbol: 'DANGCEM', name: 'Dangote Cement', current_price: 530.00, change_percent: -0.85, sector: 'Industrial' },
+  { symbol: 'GTCO', name: 'GTCO Holdings', current_price: 44.20, change_percent: 2.15, sector: 'Banking' },
+  { symbol: 'ZENITHBANK', name: 'Zenith Bank', current_price: 38.80, change_percent: 0.50, sector: 'Banking' },
+  { symbol: 'BUAFOODS', name: 'BUA Foods', current_price: 315.00, change_percent: 0.00, sector: 'Consumer Goods' }
 ];
 
-async function fetchNGNMarket<T>(endpoint: string): Promise<T | null> {
+/**
+ * Core API Fetcher with Smart 403 Interception
+ */
+async function fetchNGNMarket<T>(endpoint: string): Promise<{ data: T | null; isPlanRestricted: boolean }> {
   const apiKey = process.env.NGN_MARKET_API_KEY;
-  if (!apiKey) {
-    console.warn("⚠️ NGN_MARKET_API_KEY is missing from environment variables.");
-    return null;
-  }
+  if (!apiKey) return { data: null, isPlanRestricted: false };
 
   try {
     const res = await fetch(`${NGN_MARKET_BASE_URL}${endpoint}`, {
@@ -39,80 +40,140 @@ async function fetchNGNMarket<T>(endpoint: string): Promise<T | null> {
         'Authorization': `Bearer ${apiKey}`,
         'Accept': 'application/json',
       },
-      cache: 'no-store', // Always fetch live
+      cache: 'no-store', 
     });
 
+    // Intercept 403 Forbidden (Free/Lower Tier Limits)
+    if (res.status === 403) {
+      return { data: null, isPlanRestricted: true };
+    }
+
     if (!res.ok) {
-      console.warn(`NGN Market API returned status ${res.status} for ${endpoint}`);
-      return null;
+      return { data: null, isPlanRestricted: false };
     }
 
     const payload = await res.json();
     
-    // Ensure we got a successful payload wrapper
     if (payload && payload.success === true && payload.data !== undefined) {
-      return payload.data as T;
+      return { data: payload.data as T, isPlanRestricted: false };
     }
     
-    return null;
+    return { data: null, isPlanRestricted: false };
   } catch (error) {
     console.error(`Error fetching NGN Market endpoint ${endpoint}:`, error);
-    return null;
+    return { data: null, isPlanRestricted: false };
   }
 }
 
-//  Fetch target companies concurrently with STRICT TypeScript Returns
-export const getActiveCompanies = cache(async (): Promise<NGNStock[]> => {
-  try {
-    const companies = await Promise.all(
-      TARGET_SYMBOLS.map(async (symbol) => {
-        // Correctly hitting the individual company endpoint as per NGN docs
-        const data = await fetchNGNMarket<any>(`/companies/${symbol}`);
-        if (!data) return null;
+// ============================================================================
+// FREE TIER ENDPOINTS (Works currently)
+// ============================================================================
 
-        return {
-          symbol: data.symbol || symbol,
-          name: data.name || data.company_name || 'NGX Asset',
-          current_price: parseFloat(data.price || data.current_price || data.close_price || 0),
-          change_percent: parseFloat(data.price_change_percent || data.change_percent || data.percentage_change || 0),
-          sector: data.sector || 'General Market',
-        } as NGNStock;
-      })
-    );
-
-    // ✅ TYPE GUARD: Tell TypeScript we are specifically stripping out the nulls
-    const validCompanies = companies.filter((c): c is NGNStock => c !== null);
-
-    if (validCompanies.length === 0) {
-        return FALLBACK_STOCKS;
-    }
-
-    return validCompanies;
-  } catch (error) {
-    console.error("Crash prevented in getActiveCompanies:", error);
-    return FALLBACK_STOCKS;
+// 🏛️ Retrieve macro index values (Free Tier Compatible)
+export async function getMarketSnapshot() {
+  const { data } = await fetchNGNMarket<any>('/market/snapshot');
+  
+  if (data && typeof data === 'object' && !Array.isArray(data)) {
+      return data;
   }
+  
+  // Hard fallback just in case the network fails completely
+  return { 
+    asi: 105432.18, 
+    volume: 412850000, 
+    value_traded: 6213400000, 
+    market_cap: { equity: 58920000000000, bonds: 0, etfs: 0, total: 58920000000000 } 
+  };
+}
+
+// ============================================================================
+// HOBBY TIER ENDPOINTS (Profiles & Price Charts)
+// ============================================================================
+
+export const getActiveCompanies = cache(async (): Promise<NGNStock[]> => {
+  const companies = await Promise.all(
+    TARGET_SYMBOLS.map(async (symbol) => {
+      const { data, isPlanRestricted } = await fetchNGNMarket<any>(`/companies/${symbol}`);
+      
+      // If the plan blocks this request, return null immediately to trigger fallback
+      if (isPlanRestricted || !data) return null;
+
+      return {
+        symbol: data.symbol || symbol,
+        name: data.name || data.company_name || 'NGX Asset',
+        current_price: parseFloat(data.price || data.current_price || data.close_price || 0),
+        change_percent: parseFloat(data.price_change_percent || data.change_percent || data.percentage_change || 0),
+        sector: data.sector || 'General Market',
+      } as NGNStock;
+    })
+  );
+
+  const validCompanies = companies.filter((c): c is NGNStock => c !== null);
+
+  // If all failed (due to 403 Free Tier), deploy the fallback matrix
+  if (validCompanies.length === 0) {
+      return FALLBACK_STOCKS;
+  }
+
+  return validCompanies;
 });
 
-//  Retrieve historical OHLCV chart records
 export async function getStockChartTimeline(symbol: string, period: string = '30d') {
-  try {
-    const data = await fetchNGNMarket<any[]>(`/companies/${symbol.toUpperCase()}/chart?period=${period}&format=ohlcv`);
-    return Array.isArray(data) ? data : [];
-  } catch (error) {
-    return [];
-  }
+  const { data, isPlanRestricted } = await fetchNGNMarket<any[]>(`/companies/${symbol.toUpperCase()}/chart?period=${period}&format=ohlcv`);
+  
+  // If restricted by plan, we return empty, allowing the client-side UI to generate the mock chart
+  if (isPlanRestricted) return [];
+  
+  return Array.isArray(data) ? data : [];
 }
 
-//  Retrieve macro index values
-export async function getMarketSnapshot() {
-  try {
-    const data = await fetchNGNMarket<any>('/market/snapshot');
-    if (data && typeof data === 'object' && !Array.isArray(data)) {
-       return data;
-    }
-    return { asi: 105432.18, volume: 412850000, value_traded: 6213400000, market_cap: 58920000000000 };
-  } catch (error) {
-    return { asi: 105432.18, volume: 412850000, value_traded: 6213400000, market_cap: 58920000000000 };
+// ============================================================================
+// STARTER TIER ENDPOINTS (Top Movers & News)
+// ============================================================================
+
+export async function getMarketTopMovers() {
+  const { data, isPlanRestricted } = await fetchNGNMarket<any>('/market/top-movers');
+  
+  if (isPlanRestricted || !data) {
+    // 🛡️ Fallback Movers
+    return {
+      advancers: [{ symbol: 'GTCO', change: 2.15 }, { symbol: 'MTNN', change: 1.45 }],
+      decliners: [{ symbol: 'DANGCEM', change: -0.85 }, { symbol: 'UBA', change: -0.40 }]
+    };
   }
+  return data;
+}
+
+// ============================================================================
+// BUSINESS TIER ENDPOINTS (Full Financials, Cash Flow, Income Statement)
+// ============================================================================
+
+export async function getCompanyFinancials(symbol: string) {
+  const { data, isPlanRestricted } = await fetchNGNMarket<any>(`/companies/${symbol.toUpperCase()}/financials`);
+  
+  if (isPlanRestricted || !data) {
+    // 🛡️ Premium Business Tier Fallback (Generated for Free Tier users)
+    return {
+      symbol: symbol.toUpperCase(),
+      income_statement: {
+        revenue: 1250000000000, // 1.25T
+        gross_profit: 450000000000,
+        net_income: 185000000000,
+        eps: 12.45
+      },
+      balance_sheet: {
+        total_assets: 3400000000000,
+        total_liabilities: 2100000000000,
+        total_equity: 1300000000000
+      },
+      ratios: {
+        pe_ratio: 8.5,
+        pb_ratio: 1.2,
+        dividend_yield: 4.5,
+        debt_to_equity: 1.6
+      }
+    };
+  }
+  
+  return data;
 }

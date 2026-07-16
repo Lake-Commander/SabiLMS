@@ -1,34 +1,55 @@
+// lib/constants.ts
+
+/**
+ * ============================================================================
+ * NAVIGATION & APP CONFIGURATION
+ * ============================================================================
+ */
+
 export const NAV_ITEMS = [
     { href: '/', label: 'Dashboard' },
     { href: '/search', label: 'Search' },
-    // { href: '/watchlist', label: 'Watchlist' },
+    { href: '/simulator', label: 'Simulator' },
+    { href: '/learn', label: 'Courses' },
 ];
 
-// Sign-up form select options
+export const SIMULATOR_DEFAULTS = {
+    STARTING_BALANCE: 1000000, // ₦1,000,000 default paper money
+    CURRENCY_SYMBOL: '₦',
+    TRANSACTION_FEE_PERCENT: 0.015, // Standard NGX broker/SEC fee simulation
+};
+
+/**
+ * ============================================================================
+ * FORM & PREFERENCE OPTIONS
+ * ============================================================================
+ */
+
 export const INVESTMENT_GOALS = [
-    { value: 'Growth', label: 'Growth' },
-    { value: 'Income', label: 'Income' },
-    { value: 'Balanced', label: 'Balanced' },
-    { value: 'Conservative', label: 'Conservative' },
+    { value: 'Growth', label: 'Capital Growth' },
+    { value: 'Income', label: 'Dividend Income' },
+    { value: 'Balanced', label: 'Balanced Portfolio' },
+    { value: 'Conservative', label: 'Capital Preservation' },
 ];
 
 export const RISK_TOLERANCE_OPTIONS = [
-    { value: 'Low', label: 'Low' },
-    { value: 'Medium', label: 'Medium' },
-    { value: 'High', label: 'High' },
+    { value: 'Low', label: 'Low (Bonds/Blue-Chip focus)' },
+    { value: 'Medium', label: 'Medium (Mixed Equities)' },
+    { value: 'High', label: 'High (Aggressive Growth/Penny Stocks)' },
 ];
 
 export const PREFERRED_INDUSTRIES = [
-    { value: 'Technology', label: 'Technology' },
-    { value: 'Healthcare', label: 'Healthcare' },
-    { value: 'Finance', label: 'Finance' },
-    { value: 'Energy', label: 'Energy' },
-    { value: 'Consumer Goods', label: 'Consumer Goods' },
+    { value: 'Financial Services', label: 'Financial Services & Banking' },
+    { value: 'ICT', label: 'Telecommunications & Tech' },
+    { value: 'Industrial Goods', label: 'Industrial Goods & Cement' },
+    { value: 'Consumer Goods', label: 'Consumer Goods & Food' },
+    { value: 'Oil and Gas', label: 'Oil and Gas' },
+    { value: 'Agriculture', label: 'Agriculture' },
 ];
 
 export const ALERT_TYPE_OPTIONS = [
-    { value: 'upper', label: 'Upper' },
-    { value: 'lower', label: 'Lower' },
+    { value: 'upper', label: 'Upper Target (Take Profit)' },
+    { value: 'lower', label: 'Lower Target (Stop Loss)' },
 ];
 
 export const CONDITION_OPTIONS = [
@@ -36,67 +57,93 @@ export const CONDITION_OPTIONS = [
     { value: 'less', label: 'Less than (<)' },
 ];
 
-// TradingView Charts
+export const WATCHLIST_TABLE_HEADER = [
+    'Company',
+    'Symbol',
+    'Price',
+    'Change',
+    'Market Cap',
+    'P/E Ratio',
+    'Alert',
+    'Action',
+];
+
+export const NO_MARKET_NEWS =
+    '<p class="mobile-text" style="margin:0 0 20px 0;font-size:16px;line-height:1.6;color:#4b5563;">The NGX market feed is currently quiet. Please check back shortly for updates.</p>';
+
+/**
+ * ============================================================================
+ * TRADINGVIEW WIDGET CONFIGURATIONS (NGX TAILORED)
+ * ============================================================================
+ */
+
 export const MARKET_OVERVIEW_WIDGET_CONFIG = {
-    colorTheme: 'dark', // dark mode
-    dateRange: '12M', // last 12 months
-    locale: 'en', // language
-    largeChartUrl: '', // link to a large chart if needed
-    isTransparent: true, // makes background transparent
-    showFloatingTooltip: true, // show tooltip on hover
-    plotLineColorGrowing: '#0FEDBE', // line color when price goes up
-    plotLineColorFalling: '#0FEDBE', // line color when price falls
-    gridLineColor: 'rgba(240, 243, 250, 0)', // grid line color
-    scaleFontColor: '#DBDBDB', // font color for scale
-    belowLineFillColorGrowing: 'rgba(41, 98, 255, 0.12)', // fill under line when growing
-    belowLineFillColorFalling: 'rgba(41, 98, 255, 0.12)', // fill under line when falling
-    belowLineFillColorGrowingBottom: 'rgba(41, 98, 255, 0)',
-    belowLineFillColorFallingBottom: 'rgba(41, 98, 255, 0)',
-    symbolActiveColor: 'rgba(15, 237, 190, 0.05)', // highlight color for active symbol
+    colorTheme: 'dark',
+    dateRange: '12M',
+    locale: 'en',
+    largeChartUrl: '',
+    isTransparent: true,
+    showFloatingTooltip: true,
+    plotLineColorGrowing: '#0FEDBE',
+    plotLineColorFalling: '#FF4D4D',
+    gridLineColor: 'rgba(240, 243, 250, 0)',
+    scaleFontColor: '#DBDBDB',
+    belowLineFillColorGrowing: 'rgba(15, 237, 190, 0.12)',
+    belowLineFillColorFalling: 'rgba(255, 77, 77, 0.12)',
+    belowLineFillColorGrowingBottom: 'rgba(15, 237, 190, 0)',
+    belowLineFillColorFallingBottom: 'rgba(255, 77, 77, 0)',
+    symbolActiveColor: 'rgba(15, 237, 190, 0.05)',
     tabs: [
         {
-            title: 'Financial',
+            title: 'Financials',
             symbols: [
-                { s: 'NYSE:JPM', d: 'JPMorgan Chase' },
-                { s: 'NYSE:WFC', d: 'Wells Fargo Co New' },
-                { s: 'NYSE:BAC', d: 'Bank Amer Corp' },
-                { s: 'NYSE:HSBC', d: 'Hsbc Hldgs Plc' },
-                { s: 'NYSE:C', d: 'Citigroup Inc' },
-                { s: 'NYSE:MA', d: 'Mastercard Incorporated' },
+                { s: 'NSENG:ZENITHBANK', d: 'Zenith Bank Plc' },
+                { s: 'NSENG:GTCO', d: 'Guaranty Trust Holding' },
+                { s: 'NSENG:UBA', d: 'United Bank for Africa' },
+                { s: 'NSENG:ACCESSCORP', d: 'Access Holdings Plc' },
+                { s: 'NSENG:FBNH', d: 'FBN Holdings Plc' },
+                { s: 'NSENG:STANBIC', d: 'Stanbic IBTC Holdings' },
             ],
         },
         {
-            title: 'Technology',
+            title: 'ICT & Telecoms',
             symbols: [
-                { s: 'NASDAQ:AAPL', d: 'Apple' },
-                { s: 'NASDAQ:GOOGL', d: 'Alphabet' },
-                { s: 'NASDAQ:MSFT', d: 'Microsoft' },
-                { s: 'NASDAQ:FB', d: 'Meta Platforms' },
-                { s: 'NYSE:ORCL', d: 'Oracle Corp' },
-                { s: 'NASDAQ:INTC', d: 'Intel Corp' },
+                { s: 'NSENG:MTNN', d: 'MTN Nigeria' },
+                { s: 'NSENG:AIRTELAFRI', d: 'Airtel Africa Plc' },
+                { s: 'NSENG:CWG', d: 'Computer Warehouse Group' },
+                { s: 'NSENG:CHAMS', d: 'Chams Holding Company' },
             ],
         },
         {
-            title: 'Services',
+            title: 'Industrials',
             symbols: [
-                { s: 'NASDAQ:AMZN', d: 'Amazon' },
-                { s: 'NYSE:BABA', d: 'Alibaba Group Hldg Ltd' },
-                { s: 'NYSE:T', d: 'At&t Inc' },
-                { s: 'NYSE:WMT', d: 'Walmart' },
-                { s: 'NYSE:V', d: 'Visa' },
+                { s: 'NSENG:DANGCEM', d: 'Dangote Cement Plc' },
+                { s: 'NSENG:BUACEMENT', d: 'BUA Cement Plc' },
+                { s: 'NSENG:WAPCO', d: 'Lafarge Africa Plc' },
+                { s: 'NSENG:BERGER', d: 'Berger Paints Plc' },
+            ],
+        },
+        {
+            title: 'Consumer Goods',
+            symbols: [
+                { s: 'NSENG:NESTLE', d: 'Nestle Nigeria Plc' },
+                { s: 'NSENG:BUAFOODS', d: 'BUA Foods Plc' },
+                { s: 'NSENG:NB', d: 'Nigerian Breweries Plc' },
+                { s: 'NSENG:DANGSUGAR', d: 'Dangote Sugar Refinery' },
+                { s: 'NSENG:FLOURMILL', d: 'Flour Mills Nigeria' },
             ],
         },
     ],
-    support_host: 'https://www.tradingview.com', // TradingView host
-    backgroundColor: '#141414', // background color
-    width: '100%', // full width
-    height: 600, // height in px
-    showSymbolLogo: true, // show logo next to symbols
-    showChart: true, // display mini chart
+    support_host: 'https://www.tradingview.com',
+    backgroundColor: '#141414',
+    width: '100%',
+    height: 600,
+    showSymbolLogo: true,
+    showChart: true,
 };
 
 export const HEATMAP_WIDGET_CONFIG = {
-    dataSource: 'SPX500',
+    dataSource: 'NSENG', // Set to Nigerian Stock Exchange
     blockSize: 'market_cap_basic',
     blockColor: 'change',
     grouping: 'sector',
@@ -120,13 +167,13 @@ export const TOP_STORIES_WIDGET_CONFIG = {
     colorTheme: 'dark',
     isTransparent: true,
     locale: 'en',
-    market: 'stock',
+    market: 'nigeria', // Targets local NGX business news
     width: '100%',
     height: '600',
 };
 
 export const MARKET_DATA_WIDGET_CONFIG = {
-    title: 'Stocks',
+    title: 'NGX Equities',
     width: '100%',
     height: 600,
     locale: 'en',
@@ -136,42 +183,42 @@ export const MARKET_DATA_WIDGET_CONFIG = {
     backgroundColor: '#0F0F0F',
     symbolsGroups: [
         {
-            name: 'Financial',
+            name: 'Top Capitalization',
             symbols: [
-                { name: 'NYSE:JPM', displayName: 'JPMorgan Chase' },
-                { name: 'NYSE:WFC', displayName: 'Wells Fargo Co New' },
-                { name: 'NYSE:BAC', displayName: 'Bank Amer Corp' },
-                { name: 'NYSE:HSBC', displayName: 'Hsbc Hldgs Plc' },
-                { name: 'NYSE:C', displayName: 'Citigroup Inc' },
-                { name: 'NYSE:MA', displayName: 'Mastercard Incorporated' },
+                { name: 'NSENG:MTNN', displayName: 'MTN Nigeria' },
+                { name: 'NSENG:DANGCEM', displayName: 'Dangote Cement' },
+                { name: 'NSENG:AIRTELAFRI', displayName: 'Airtel Africa' },
+                { name: 'NSENG:BUACEMENT', displayName: 'BUA Cement' },
+                { name: 'NSENG:BUAFOODS', displayName: 'BUA Foods' },
             ],
         },
         {
-            name: 'Technology',
+            name: 'Banking Sector',
             symbols: [
-                { name: 'NASDAQ:AAPL', displayName: 'Apple' },
-                { name: 'NASDAQ:GOOGL', displayName: 'Alphabet' },
-                { name: 'NASDAQ:MSFT', displayName: 'Microsoft' },
-                { name: 'NASDAQ:FB', displayName: 'Meta Platforms' },
-                { name: 'NYSE:ORCL', displayName: 'Oracle Corp' },
-                { name: 'NASDAQ:INTC', displayName: 'Intel Corp' },
+                { name: 'NSENG:ZENITHBANK', displayName: 'Zenith Bank' },
+                { name: 'NSENG:GTCO', displayName: 'GTCO Holdings' },
+                { name: 'NSENG:UBA', displayName: 'United Bank for Africa' },
+                { name: 'NSENG:ACCESSCORP', displayName: 'Access Corp' },
+                { name: 'NSENG:FBNH', displayName: 'FBN Holdings' },
+                { name: 'NSENG:FCMB', displayName: 'FCMB Group' },
             ],
         },
         {
-            name: 'Services',
+            name: 'Oil, Gas & Energy',
             symbols: [
-                { name: 'NASDAQ:AMZN', displayName: 'Amazon' },
-                { name: 'NYSE:BABA', displayName: 'Alibaba Group Hldg Ltd' },
-                { name: 'NYSE:T', displayName: 'At&t Inc' },
-                { name: 'NYSE:WMT', displayName: 'Walmart' },
-                { name: 'NYSE:V', displayName: 'Visa' },
+                { name: 'NSENG:SEPLAT', displayName: 'Seplat Energy' },
+                { name: 'NSENG:GEREGU', displayName: 'Geregu Power' },
+                { name: 'NSENG:OANDO', displayName: 'Oando Plc' },
+                { name: 'NSENG:CONOIL', displayName: 'Conoil Plc' },
+                { name: 'NSENG:TOTAL', displayName: 'TotalEnergies' },
+                { name: 'NSENG:TRANSCORP', displayName: 'Transcorp Plc' },
             ],
         },
     ],
 };
 
 export const SYMBOL_INFO_WIDGET_CONFIG = (symbol: string) => ({
-    symbol: symbol.toUpperCase(),
+    symbol: symbol.startsWith('NSENG:') ? symbol : `NSENG:${symbol.toUpperCase()}`,
     colorTheme: 'dark',
     isTransparent: true,
     locale: 'en',
@@ -192,9 +239,9 @@ export const CANDLE_CHART_WIDGET_CONFIG = (symbol: string) => ({
     locale: 'en',
     save_image: false,
     style: 1,
-    symbol: symbol.toUpperCase(),
+    symbol: symbol.startsWith('NSENG:') ? symbol : `NSENG:${symbol.toUpperCase()}`,
     theme: 'dark',
-    timezone: 'Etc/UTC',
+    timezone: 'Africa/Lagos', // Adjusted to WAT
     backgroundColor: '#141414',
     gridColor: '#141414',
     watchlist: [],
@@ -218,9 +265,9 @@ export const BASELINE_WIDGET_CONFIG = (symbol: string) => ({
     locale: 'en',
     save_image: false,
     style: 10,
-    symbol: symbol.toUpperCase(),
+    symbol: symbol.startsWith('NSENG:') ? symbol : `NSENG:${symbol.toUpperCase()}`,
     theme: 'dark',
-    timezone: 'Etc/UTC',
+    timezone: 'Africa/Lagos',
     backgroundColor: '#141414',
     gridColor: '#141414',
     watchlist: [],
@@ -232,7 +279,7 @@ export const BASELINE_WIDGET_CONFIG = (symbol: string) => ({
 });
 
 export const TECHNICAL_ANALYSIS_WIDGET_CONFIG = (symbol: string) => ({
-    symbol: symbol.toUpperCase(),
+    symbol: symbol.startsWith('NSENG:') ? symbol : `NSENG:${symbol.toUpperCase()}`,
     colorTheme: 'dark',
     isTransparent: 'true',
     locale: 'en',
@@ -243,7 +290,7 @@ export const TECHNICAL_ANALYSIS_WIDGET_CONFIG = (symbol: string) => ({
 });
 
 export const COMPANY_PROFILE_WIDGET_CONFIG = (symbol: string) => ({
-    symbol: symbol.toUpperCase(),
+    symbol: symbol.startsWith('NSENG:') ? symbol : `NSENG:${symbol.toUpperCase()}`,
     colorTheme: 'dark',
     isTransparent: 'true',
     locale: 'en',
@@ -252,7 +299,7 @@ export const COMPANY_PROFILE_WIDGET_CONFIG = (symbol: string) => ({
 });
 
 export const COMPANY_FINANCIALS_WIDGET_CONFIG = (symbol: string) => ({
-    symbol: symbol.toUpperCase(),
+    symbol: symbol.startsWith('NSENG:') ? symbol : `NSENG:${symbol.toUpperCase()}`,
     colorTheme: 'dark',
     isTransparent: 'true',
     locale: 'en',
@@ -262,78 +309,98 @@ export const COMPANY_FINANCIALS_WIDGET_CONFIG = (symbol: string) => ({
     largeChartUrl: '',
 });
 
-export const POPULAR_STOCK_SYMBOLS = [
-    // Tech Giants (the big technology companies)
-    'AAPL',
-    'MSFT',
-    'GOOGL',
-    'AMZN',
-    'TSLA',
-    'META',
-    'NVDA',
-    'NFLX',
-    'ORCL',
-    'CRM',
+/**
+ * ============================================================================
+ * NIGERIAN STOCK EXCHANGE (NGX) TICKER DIRECTORY
+ * ============================================================================
+ */
 
-    // Growing Tech Companies
-    'ADBE',
-    'INTC',
-    'AMD',
-    'PYPL',
-    'UBER',
-    'ZOOM',
-    'SPOT',
-    'SQ',
-    'SHOP',
-    'ROKU',
-
-    // Newer Tech Companies
-    'SNOW',
-    'PLTR',
-    'COIN',
-    'RBLX',
-    'DDOG',
-    'CRWD',
-    'NET',
-    'OKTA',
-    'TWLO',
-    'ZM',
-
-    // Consumer & Delivery Apps
-    'DOCU',
-    'PTON',
-    'PINS',
-    'SNAP',
-    'LYFT',
-    'DASH',
-    'ABNB',
-    'RIVN',
-    'LCID',
-    'NIO',
-
-    // International Companies
-    'XPEV',
-    'LI',
-    'BABA',
-    'JD',
-    'PDD',
-    'TME',
-    'BILI',
-    'DIDI',
-    'GRAB',
-    'SE',
-];
-
-export const NO_MARKET_NEWS =
-    '<p class="mobile-text" style="margin:0 0 20px 0;font-size:16px;line-height:1.6;color:#4b5563;">No market news available today. Please check back tomorrow.</p>';
-
-export const WATCHLIST_TABLE_HEADER = [
-    'Company',
-    'Symbol',
-    'Price',
-    'Change',
-    'Market Cap',
-    'P/E Ratio',
-    'Alert',
-    'Action',
+export const NGX_STOCK_SYMBOLS = [
+    // Premium Board / Mega Cap
+    'MTNN',         // MTN Nigeria Communications Plc
+    'DANGCEM',      // Dangote Cement Plc
+    'AIRTELAFRI',   // Airtel Africa Plc
+    'BUACEMENT',    // BUA Cement Plc
+    'BUAFOODS',     // BUA Foods Plc
+    
+    // Tier-1 Banking (FUGAZ +)
+    'ZENITHBANK',   // Zenith Bank Plc
+    'GTCO',         // Guaranty Trust Holding Company Plc
+    'UBA',          // United Bank for Africa Plc
+    'ACCESSCORP',   // Access Holdings Plc
+    'FBNH',         // FBN Holdings Plc
+    'STANBIC',      // Stanbic IBTC Holdings Plc
+    'FIDELITYBK',   // Fidelity Bank Plc
+    'FCMB',         // FCMB Group Plc
+    'STERLINGNG',   // Sterling Financial Holdings
+    'WEMABANK',     // Wema Bank Plc
+    
+    // Consumer Goods
+    'NESTLE',       // Nestle Nigeria Plc
+    'NB',           // Nigerian Breweries Plc
+    'GUINNESS',     // Guinness Nigeria Plc
+    'DANGSUGAR',    // Dangote Sugar Refinery Plc
+    'FLOURMILL',    // Flour Mills Nigeria Plc
+    'NASCON',       // NASCON Allied Industries Plc
+    'PZ',           // PZ Cussons Nigeria Plc
+    'CADBURY',      // Cadbury Nigeria Plc
+    'HONOURFO',     // Honeywell Flour Mill Plc
+    'UNILEVER',     // Unilever Nigeria Plc
+    'CHAMPION',     // Champion Breweries Plc
+    
+    // Oil, Gas & Utilities
+    'SEPLAT',       // Seplat Energy Plc
+    'GEREGU',       // Geregu Power Plc
+    'OANDO',        // Oando Plc
+    'CONOIL',       // Conoil Plc
+    'TOTAL',        // TotalEnergies Marketing Nigeria Plc
+    'MRS',          // MRS Oil Nigeria Plc
+    'ETERNA',       // Eterna Plc
+    
+    // Conglomerates
+    'TRANSCORP',    // Transnational Corporation Plc
+    'UACN',         // UAC of Nigeria Plc
+    'JOHNHOLT',     // John Holt Plc
+    
+    // Industrial Goods & Building Materials
+    'WAPCO',        // Lafarge Africa Plc
+    'BERGER',       // Berger Paints Plc
+    'CAP',          // CAP Plc
+    'MEYER',        // Meyer Plc
+    'BETAGLAS',     // Beta Glass Plc
+    'CUTIX',        // Cutix Plc
+    
+    // Agriculture
+    'OKOMUOIL',     // Okomu Oil Palm Plc
+    'PRESCO',       // Presco Plc
+    'FTNCOCOA',     // FTN Cocoa Processors Plc
+    'ELLAHLAKES',   // Ellah Lakes Plc
+    
+    // Healthcare & Pharmaceuticals
+    'FIDSON',       // Fidelity Healthcare
+    'MAYBAKER',     // May & Baker Nigeria Plc
+    'NEIMETH',      // Neimeth International Pharmaceuticals
+    'GLAXOSMITH',   // GlaxoSmithKline Consumer Nig. Plc
+    
+    // ICT & Technology
+    'CWG',          // Computer Warehouse Group Plc
+    'CHAMS',        // Chams Holding Company Plc
+    'OMATEK',       // Omatek Ventures Plc
+    'TRIPPLEG',     // Tripple Gee and Company Plc
+    'COURTVILLE',   // Courteville Business Solutions Plc
+    
+    // Insurance
+    'AIICO',        // AIICO Insurance Plc
+    'CUSTODIAN',    // Custodian Investment Plc
+    'MANSARD',      // AXA Mansard Insurance Plc
+    'MUTUALANI',    // Mutual Benefits Assurance
+    'NEM',          // NEM Insurance Plc
+    'CORNERST',     // Cornerstone Insurance Plc
+    'WAPIC',        // Coronation Insurance Plc
+    'LASACO',       // Lasaco Assurance Plc
+    
+    // Real Estate & Construction
+    'UPDC',         // UACN Property Development Company
+    'UPL',          // UPDC Real Estate Investment Trust
+    'ARBHICO',      // Arbico Plc
 ];
