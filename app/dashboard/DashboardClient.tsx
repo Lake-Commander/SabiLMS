@@ -57,7 +57,7 @@ export default function DashboardClient({
                         Overview
                     </span>
                     <span className="text-xs text-gray-500 font-bold font-mono uppercase tracking-wider">
-                        / live_metrics
+                        / live Metrics
                     </span>
                 </div>
 
