@@ -7,7 +7,7 @@ import {
   Loader2, Search, Star, BookmarkPlus, Layers, ShoppingBag
 } from 'lucide-react';
 import HistoricalChart from '@/components/HistoricalChart';
-import { executeTrade } from '@/lib/actions/simulation.actions'; // Imported server action
+import { executeTrade } from '@/lib/actions/simulation.actions'; 
 import { toast } from 'sonner';
 
 interface LiveStock {
@@ -23,7 +23,7 @@ interface MacroMetrics {
   asi: number;
   volume: number;
   value_traded: number;
-  market_cap: any; // Updated to handle nested object
+  market_cap: any; // Handles the nested { equity, bonds, total } object
 }
 
 interface SimulatorClientProps {
@@ -46,7 +46,7 @@ export default function SimulatorClient({ user, initialPortfolio, marketStocks, 
   const [tradeQty, setTradeQty] = useState<number>(1);
   const [isSubmittingTrade, setIsSubmittingTrade] = useState(false);
 
-  // Generates realistic mock chart data since NGN Free Tier blocks chart endpoints
+  // 🛡️ MOCK CHART GENERATOR: Fallback for when NGN Market Free Tier returns 403 Forbidden
   const generateMockChartData = useCallback((basePrice: number, days: number) => {
     const data = [];
     const baseTime = new Date().getTime();
@@ -68,19 +68,35 @@ export default function SimulatorClient({ user, initialPortfolio, marketStocks, 
           parseFloat(close.toFixed(2))
         ]
       });
-      current = close; // Carry trend forward
+      current = close; // Carry trend forward for realism
     }
     return data;
   }, []);
 
   const fetchStockTimeline = useCallback(async (symbol: string, range: string, currentPrice: number) => {
     setIsLoadingChart(true);
-    // Since API blocks this on free tier, immediately generate a realistic local mock chart
-    setTimeout(() => {
+    try {
+      const res = await fetch(`/api/market?symbol=${symbol}&period=${range}`);
+      const payload = await res.json();
+      
+      if (payload.success && Array.isArray(payload.series) && payload.series.length > 0) {
+        const formattedSeries = payload.series.map((node: any) => ({
+          x: new Date(node[0]).getTime(),
+          y: [node[1], node[2], node[3], node[4]]
+        }));
+        setChartSeries(formattedSeries);
+      } else {
+        // 🚀 SMART FALLBACK: If API rejects (403), inject our realistic mock data
+        const days = range === '7d' ? 7 : range === '90d' ? 90 : 30;
+        setChartSeries(generateMockChartData(currentPrice, days));
+      }
+    } catch (err) {
+      // 🚀 SMART FALLBACK
       const days = range === '7d' ? 7 : range === '90d' ? 90 : 30;
       setChartSeries(generateMockChartData(currentPrice, days));
+    } finally {
       setIsLoadingChart(false);
-    }, 400); // Small delay to simulate network request
+    }
   }, [generateMockChartData]);
 
   useEffect(() => {
@@ -110,9 +126,9 @@ export default function SimulatorClient({ user, initialPortfolio, marketStocks, 
       );
 
       if (res.success) {
-        setPortfolio(res.portfolio); 
+        setPortfolio(res.portfolio);
         toast.success(`Successfully filled order: ${tradeType} ${tradeQty} units of ${selectedStock.symbol}`);
-        setTradeQty(1); 
+        setTradeQty(1);
       } else {
         toast.error(`Trade rejected: ${res.error}`);
       }
@@ -157,7 +173,7 @@ export default function SimulatorClient({ user, initialPortfolio, marketStocks, 
           </div>
           <div>
             <div className="text-[9px] font-mono font-black uppercase text-gray-400">Market Cap</div>
-            {/*  Correctly targeting the nested .equity object value */}
+            {/* Safely accesses nested object from NGN Market */}
             <div className="text-sm font-mono font-black mt-0.5">
               ₦{((macro.market_cap?.equity || macro.market_cap?.total || 58920000000000) / 1000000000000).toFixed(1)}T
             </div>
@@ -249,7 +265,7 @@ export default function SimulatorClient({ user, initialPortfolio, marketStocks, 
 
               {isLoadingChart ? (
                 <div className="h-64 flex items-center justify-center font-mono text-[9px] font-black uppercase text-gray-400 bg-[var(--cream)] border-2 border-black rounded-lg">
-                  <Loader2 className="w-4 h-4 animate-spin mr-1.5" /> Mapping OHLCV arrays...
+                  <Loader2 className="w-4 h-4 animate-spin mr-1.5" /> Interpolating Data...
                 </div>
               ) : (
                 <HistoricalChart 
