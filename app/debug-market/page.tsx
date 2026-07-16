@@ -8,7 +8,7 @@ export default async function DebugMarket() {
   let rawBody = "No fetch attempted";
 
   try {
-    const res = await fetch('https://api.ngnmarket.com/v1/market/snapshot', {
+    const res = await fetch('https://api.ngnmarket.com/v1/companies/MTNN', {
       headers: { 
         'Authorization': `Bearer ${apiKey}`,
         'Accept': 'application/json' 
